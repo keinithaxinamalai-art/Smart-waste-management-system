@@ -93,7 +93,7 @@ export function PublicReportView({
       lng: coords?.lng,
     };
 
-    const validation = validateWasteReport(payload as any);
+    const validation = validateWasteReport(payload);
     if (!validation.isValid) {
       setErrors(validation.errors);
       return;
