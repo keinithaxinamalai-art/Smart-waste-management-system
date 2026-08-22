@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { LogIn, Recycle, Shield, Truck, User } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
-import type { UserRole } from '../types';
 import './LoginView.css';
 
 interface LoginViewProps {
@@ -18,41 +17,52 @@ export function LoginView({
   onCitizenLogin,
 }: LoginViewProps) {
   const { login } = useApp();
-  const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
-  const [email, setEmail] = useState('admin@canberra.act.gov.au');
-  const [password, setPassword] = useState('••••••••');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'citizen'>('admin');
+  const [email, setEmail] = useState('admin@smartwaste.demo');
+  const [password, setPassword] = useState('DemoAdmin123!');
 
-  const DEMO_ACCOUNTS = [
+  const DEMO_ACCOUNTS: {
+    role: 'admin' | 'staff' | 'citizen';
+    title: string;
+    email: string;
+    pass: string;
+    name: string;
+    desc: string;
+    icon: typeof Shield;
+  }[] = [
     {
-      role: 'admin' as UserRole,
+      role: 'admin',
       title: 'Administrator',
-      email: 'admin@canberra.act.gov.au',
+      email: 'admin@smartwaste.demo',
+      pass: 'DemoAdmin123!',
       name: 'TCCS Manager (Bijay P.)',
-      desc: 'System oversight, statistics, priority management & reports',
+      desc: 'System oversight, statistics, priority management & report administration',
       icon: Shield,
     },
     {
-      role: 'staff' as UserRole,
+      role: 'staff',
       title: 'Collection Staff',
-      email: 'staff@canberra.act.gov.au',
-      name: 'Route Driver (Krishna / Samir)',
+      email: 'staff@smartwaste.demo',
+      pass: 'DemoStaff123!',
+      name: 'Route Driver 1 (Krishna / Samir)',
       desc: 'Priority collection queue, bin pickup & route execution',
       icon: Truck,
     },
     {
-      role: 'citizen' as UserRole,
-      title: 'Citizen User',
-      email: 'citizen@canberra.act.gov.au',
-      name: 'Canberra Resident (Ayush A.)',
-      desc: 'Report overflowing bins, track report status & history',
+      role: 'citizen',
+      title: 'Citizen',
+      email: 'citizen@smartwaste.demo',
+      pass: 'DemoCitizen123!',
+      name: 'Canberra Resident (Ayush A. / Charanpal K.)',
+      desc: 'Report waste issues, track report status & view personal report history',
       icon: User,
     },
   ];
 
-  const handleRoleSelect = (r: UserRole, defaultEmail: string) => {
-    setSelectedRole(r);
-    setEmail(defaultEmail);
-    setPassword('••••••••');
+  const handleRoleSelect = (acc: typeof DEMO_ACCOUNTS[0]) => {
+    setSelectedRole(acc.role);
+    setEmail(acc.email);
+    setPassword(acc.pass);
   };
 
   const handleSignIn = (e: React.FormEvent) => {
@@ -64,7 +74,7 @@ export function LoginView({
     else onCitizenLogin?.();
   };
 
-  const quickSignIn = (r: UserRole) => {
+  const quickSignIn = (r: 'admin' | 'staff' | 'citizen') => {
     const account = DEMO_ACCOUNTS.find((a) => a.role === r);
     login(r, account?.name, account?.email);
     if (r === 'admin') onManagerLogin?.();
@@ -81,13 +91,13 @@ export function LoginView({
             <Recycle size={36} strokeWidth={2.25} />
           </div>
           <h1>Canberra SmartWaste</h1>
-          <p>TCCS Pilot · Territory & Municipal Services (ACT Government)</p>
+          <p>TCCS Pilot · Prototype Smart Waste Management System</p>
         </div>
 
         <div className="login-card">
-          <h2>Demonstration Sign In</h2>
+          <h2>Prototype Sign In</h2>
           <p className="login-card-sub">
-            Select a role or quick demo account to access the smart waste management portal.
+            Select a prototype role account to sign in and access the system.
           </p>
 
           <div className="demo-role-selector">
@@ -99,7 +109,7 @@ export function LoginView({
                   key={acc.role}
                   type="button"
                   className={`demo-role-chip ${isSelected ? 'active' : ''}`}
-                  onClick={() => handleRoleSelect(acc.role, acc.email)}
+                  onClick={() => handleRoleSelect(acc)}
                 >
                   <IconComp size={18} />
                   <span>{acc.title}</span>
@@ -110,7 +120,7 @@ export function LoginView({
 
           <form className="login-form" onSubmit={handleSignIn}>
             <label className="login-field">
-              <span>Demo Username / Email</span>
+              <span>Prototype Account Username</span>
               <input
                 type="email"
                 value={email}
@@ -119,9 +129,9 @@ export function LoginView({
               />
             </label>
             <label className="login-field">
-              <span>Password (Demo Authentication)</span>
+              <span>Prototype Account Password</span>
               <input
-                type="password"
+                type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -134,7 +144,7 @@ export function LoginView({
           </form>
 
           <div className="login-divider">
-            <span>or 1-click quick demo switch</span>
+            <span>or 1-click quick demo sign in</span>
           </div>
 
           <div className="login-quick-actions">
@@ -143,26 +153,26 @@ export function LoginView({
               className="btn btn-secondary"
               onClick={() => quickSignIn('admin')}
             >
-              <Shield size={16} /> Admin Demo
+              <Shield size={16} /> Admin
             </button>
             <button
               type="button"
               className="btn btn-secondary"
               onClick={() => quickSignIn('staff')}
             >
-              <Truck size={16} /> Staff Demo
+              <Truck size={16} /> Staff
             </button>
             <button
               type="button"
               className="btn btn-secondary"
               onClick={() => quickSignIn('citizen')}
             >
-              <User size={16} /> Citizen Demo
+              <User size={16} /> Citizen
             </button>
           </div>
 
           <div className="login-divider">
-            <span>or for anonymous reporting</span>
+            <span>or anonymous public reporting</span>
           </div>
 
           <button
@@ -172,12 +182,12 @@ export function LoginView({
           >
             <Recycle size={20} />
             Report a Full Bin (Public)
-            <span className="login-btn-hint">No sign-in required</span>
+            <span className="login-btn-hint">No account required</span>
           </button>
         </div>
 
         <p className="login-footer">
-          Notice: Prototype sensor telemetry & ACT Government demonstration account system.
+          Demonstration data & simulated smart-bin sensor monitoring for Iteration 1 prototype.
         </p>
       </div>
     </div>
