@@ -9,6 +9,7 @@ const seedReports: PublicReport[] = [
     location: 'London Cct near Civic Square',
     suburb: 'Civic',
     description: 'Bin overflowing onto footpath since yesterday.',
+    urgency: 'High',
     binId: 'CIV-016',
     reporterName: 'Alex M.',
     status: 'new',

@@ -8,7 +8,7 @@ import {
   Recycle,
   Users,
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../hooks/useApp';
 
 export type NavId =
   | 'dashboard'
