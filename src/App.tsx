@@ -4,7 +4,8 @@ import { Header } from './components/Header';
 import './components/Header.css';
 import { Sidebar, type NavId } from './components/Sidebar';
 import './components/Sidebar.css';
-import { AppProvider, useApp } from './context/AppContext';
+import { AppProvider } from './context/AppContext';
+import { useApp } from './hooks/useApp';
 import { DashboardView, MapView } from './views/DashboardView';
 import { DriverView } from './views/DriverView';
 import './views/DriverView.css';
@@ -38,7 +39,7 @@ function initialRoute(): { screen: AppScreen; nav: NavId } {
   if (mode === 'login') {
     return { screen: 'login', nav: 'dashboard' };
   }
-  if (mode === 'driver') {
+  if (mode === 'driver' || mode === 'staff') {
     return { screen: 'app', nav: 'driver' };
   }
   if (mode) {
@@ -54,11 +55,10 @@ function initialRoute(): { screen: AppScreen; nav: NavId } {
   }
 
   const saved = readSavedRole();
-  if (saved === 'driver') {
+  if (saved === 'driver' || (saved as any) === 'staff') {
     return { screen: 'app', nav: 'driver' };
   }
 
-  // Default: manager desktop dashboard (also used on first visit with demo manager session).
   return { screen: 'app', nav: 'dashboard' };
 }
 
@@ -92,6 +92,11 @@ function AppRoutes() {
     setRoute({ screen: 'app', nav: 'driver' });
   };
 
+  const handleCitizenLogin = () => {
+    clearExportParam();
+    setRoute({ screen: 'public', nav: 'dashboard' });
+  };
+
   if (!role) {
     if (screen === 'public') {
       return (
@@ -107,6 +112,17 @@ function AppRoutes() {
         onPublicReport={() => setScreen('public')}
         onManagerLogin={handleManagerLogin}
         onDriverLogin={handleDriverLogin}
+        onCitizenLogin={handleCitizenLogin}
+      />
+    );
+  }
+
+  if (role === 'citizen') {
+    return (
+      <PublicReportView
+        variant="standalone"
+        onBack={handleLogout}
+        demoSuccessId={exportMode === 'public-success' ? 'PR-DEMO001' : undefined}
       />
     );
   }
@@ -121,7 +137,7 @@ function AppRoutes() {
     );
   }
 
-  if (role === 'driver') {
+  if (role === 'staff' || role === 'driver') {
     return (
       <div className="driver-shell">
         <DriverView onLogout={handleLogout} />
