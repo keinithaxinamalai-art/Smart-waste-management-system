@@ -6,7 +6,8 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-import { issueLabels, useApp } from '../context/AppContext';
+import { ISSUE_LABELS } from '../constants/issueLabels';
+import { useApp } from '../hooks/useApp';
 import type { ReportStatus } from '../types';
 import './PublicReportsAdminView.css';
 
@@ -93,7 +94,7 @@ export function PublicReportsAdminView() {
                   {report.status}
                 </span>
               </div>
-              <h3>{issueLabels[report.issue]}</h3>
+              <h3>{report.issueLabel || ISSUE_LABELS[report.issue] || report.issue}</h3>
               <p className="public-report-loc">
                 <MapPin size={14} />
                 {report.location} · {report.suburb}

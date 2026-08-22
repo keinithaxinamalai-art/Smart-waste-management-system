@@ -8,7 +8,7 @@ import { MapPanel } from '../components/MapPanel';
 import '../components/MapPanel.css';
 import { StatCard } from '../components/StatCard';
 import '../components/StatCard.css';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../hooks/useApp';
 import { stats } from '../data/mockData';
 import type { NavId } from '../components/Sidebar';
 
