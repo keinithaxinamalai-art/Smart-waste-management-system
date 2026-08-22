@@ -18,6 +18,7 @@ export interface AppContextValue {
   ) => PublicReport;
   setReportStatus: (id: string, status: ReportStatus) => void;
   triggerCollection: (binId: string) => void;
+  resetAllDemoData: () => void;
   refreshData: () => void;
 }
 
