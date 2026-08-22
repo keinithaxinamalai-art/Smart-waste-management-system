@@ -11,39 +11,29 @@ import {
   getStoredBins,
   getStoredCollections,
   getStoredReports,
+  resetDemoData,
   saveStoredBins,
   saveStoredReports,
 } from '../services/dataStore';
 import type { Bin, CollectionPriority, CollectionRecord, PublicReport, ReportStatus, UserRole } from '../types';
-
-export interface UserSession {
-  role: UserRole;
-  name: string;
-  email: string;
-}
-
-
-
-
-
-function resolveInitialRole(): UserRole {
-  const savedRole = sessionStorage.getItem('swm_user_role') as UserRole;
-  if (savedRole) return savedRole;
-  return 'admin';
-}
-
-function resolveInitialName(): string {
-  return sessionStorage.getItem('swm_user_name') || 'TCCS Operations Manager';
-}
-
-function resolveInitialEmail(): string {
-  return sessionStorage.getItem('swm_user_email') || 'admin@canberra.act.gov.au';
-}
+import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>(resolveInitialRole);
-  const [userName, setUserName] = useState<string>(resolveInitialName);
-  const [userEmail, setUserEmail] = useState<string>(resolveInitialEmail);
+  const [role, setRole] = useState<UserRole>(() => {
+    const savedRole = sessionStorage.getItem('swm_user_role') as UserRole;
+    if (savedRole === 'admin' || savedRole === 'staff' || savedRole === 'citizen') {
+      return savedRole;
+    }
+    return null; // Unauthenticated by default
+  });
+
+  const [userName, setUserName] = useState<string>(() => {
+    return sessionStorage.getItem('swm_user_name') || '';
+  });
+
+  const [userEmail, setUserEmail] = useState<string>(() => {
+    return sessionStorage.getItem('swm_user_email') || '';
+  });
 
   const [bins, setBins] = useState<Bin[]>(() => getStoredBins());
   const [reports, setReports] = useState<PublicReport[]>(() => getStoredReports());
@@ -73,26 +63,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (r: UserRole, name?: string, email?: string) => {
       if (!r) return;
 
-      let normalizedRole: UserRole = r;
-      if (r === 'manager') normalizedRole = 'admin';
-      if (r === 'driver') normalizedRole = 'staff';
-
       let defaultName = name;
       let defaultEmail = email;
 
       if (!defaultName) {
-        if (normalizedRole === 'admin') defaultName = 'TCCS Operations Manager';
-        else if (normalizedRole === 'staff') defaultName = 'Route Driver 1';
-        else defaultName = 'Citizen User';
+        if (r === 'admin') defaultName = 'TCCS Operations Manager';
+        else if (r === 'staff') defaultName = 'Collection Staff Driver 1';
+        else defaultName = 'Canberra Citizen Resident';
       }
 
       if (!defaultEmail) {
-        if (normalizedRole === 'admin') defaultEmail = 'admin@canberra.act.gov.au';
-        else if (normalizedRole === 'staff') defaultEmail = 'staff@canberra.act.gov.au';
-        else defaultEmail = 'citizen@canberra.act.gov.au';
+        if (r === 'admin') defaultEmail = 'admin@smartwaste.demo';
+        else if (r === 'staff') defaultEmail = 'staff@smartwaste.demo';
+        else defaultEmail = 'citizen@smartwaste.demo';
       }
 
-      setRole(normalizedRole);
+      setRole(r);
       setUserName(defaultName);
       setUserEmail(defaultEmail);
     },
@@ -109,7 +95,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const submitPublicReport = useCallback(
     (data: Omit<PublicReport, 'id' | 'status' | 'createdAt'>) => {
       const currentReports = getStoredReports();
-      const refId = `PR-${Math.floor(1000 + Math.random() * 9000)}`;
+      const refId = generateReportId();
       const newReport: PublicReport = {
         ...data,
         id: refId,
@@ -145,7 +131,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setReportStatus = useCallback((id: string, status: ReportStatus) => {
     const current = getStoredReports();
-    const updated = current.map((r) => (r.id === id ? { ...r, status } : r));
+    const normalized = normalizeReportStatus(status);
+    const updated = current.map((r) => (r.id === id ? { ...r, status: normalized } : r));
     saveStoredReports(updated);
     setReports(updated);
   }, []);
@@ -158,8 +145,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollections(updatedCollections);
   }, []);
 
+  const resetAllDemoData = useCallback(() => {
+    const fresh = resetDemoData();
+    setBins(fresh.bins);
+    setReports(fresh.reports);
+    setCollections(fresh.collections);
+  }, []);
+
   const newReportCount = useMemo(
-    () => reports.filter((r) => r.status === 'Submitted' || r.status === 'new').length,
+    () => reports.filter((r) => r.status === 'Submitted').length,
     [reports]
   );
 
@@ -189,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitPublicReport,
       setReportStatus,
       triggerCollection,
+      resetAllDemoData,
       refreshData,
     }),
     [
@@ -206,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitPublicReport,
       setReportStatus,
       triggerCollection,
+      resetAllDemoData,
       refreshData,
     ]
   );

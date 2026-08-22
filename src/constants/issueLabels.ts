@@ -7,6 +7,4 @@ export const ISSUE_LABELS: Record<ReportIssue, string> = {
   missed_collection: 'Missed Collection',
   hazardous: 'Hazardous Waste',
   general: 'General Waste Issue',
-  full_bin: 'Full Bin',
-  other: 'Other Waste Issue',
 };

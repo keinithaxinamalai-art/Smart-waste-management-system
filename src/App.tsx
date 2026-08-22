@@ -25,9 +25,7 @@ import {
   clearExportParam,
   getExportMode,
   isExportCaptureMode,
-  readSavedRole,
 } from './lib/routing';
-import type { UserRole } from './types';
 
 type AppScreen = 'login' | 'public' | 'app';
 
@@ -55,12 +53,7 @@ function initialRoute(): { screen: AppScreen; nav: NavId } {
     return { screen: 'app', nav: navMap[mode] ?? 'dashboard' };
   }
 
-  const saved = readSavedRole();
-  if (saved === 'driver' || (saved as UserRole) === 'staff') {
-    return { screen: 'app', nav: 'driver' };
-  }
-
-  return { screen: 'app', nav: 'dashboard' };
+  return { screen: 'login', nav: 'dashboard' };
 }
 
 function AppRoutes() {
@@ -98,13 +91,14 @@ function AppRoutes() {
     setRoute({ screen: 'public', nav: 'dashboard' });
   };
 
+  // 1. UNAUTHENTICATED STATE: Require Login Screen before protected views
   if (!role) {
     if (screen === 'public') {
       return (
         <PublicReportView
           variant="standalone"
           onBack={() => setScreen('login')}
-          demoSuccessId={exportMode === 'public-success' ? 'PR-DEMO001' : undefined}
+          demoSuccessId={exportMode === 'public-success' ? 'WST-2026-1001' : undefined}
         />
       );
     }
@@ -118,27 +112,30 @@ function AppRoutes() {
     );
   }
 
+  // 2. CITIZEN ROLE: Restricted to Citizen Portal & Report History
   if (role === 'citizen') {
     return (
       <PublicReportView
         variant="standalone"
         onBack={handleLogout}
-        demoSuccessId={exportMode === 'public-success' ? 'PR-DEMO001' : undefined}
+        demoSuccessId={exportMode === 'public-success' ? 'WST-2026-1001' : undefined}
       />
     );
   }
 
+  // 3. PUBLIC STANDALONE FLOW (when logged in as staff/admin and clicking public link)
   if (screen === 'public') {
     return (
       <PublicReportView
         variant="standalone"
         onBack={() => setScreen('app')}
-        demoSuccessId={exportMode === 'public-success' ? 'PR-DEMO001' : undefined}
+        demoSuccessId={exportMode === 'public-success' ? 'WST-2026-1001' : undefined}
       />
     );
   }
 
-  if (role === 'staff' || role === 'driver') {
+  // 4. COLLECTION STAFF ROLE: Restricted to Collection Task Queue & Bin Pickup
+  if (role === 'staff') {
     return (
       <div className="driver-shell">
         <DriverView onLogout={handleLogout} />
@@ -147,13 +144,14 @@ function AppRoutes() {
           className="driver-public-link"
           onClick={() => setScreen('public')}
         >
-          Report a bin (public)
+          Report a bin (public view)
         </button>
       </div>
     );
   }
 
-  const renderView = () => {
+  // 5. ADMINISTRATOR ROLE: Full System Oversight & Administration
+  const renderAdminView = () => {
     switch (nav) {
       case 'dashboard':
         return <DashboardView onNavigate={setNav} />;
@@ -188,7 +186,7 @@ function AppRoutes() {
           onMenuToggle={() => setSidebarOpen((o) => !o)}
           onLogout={handleLogout}
         />
-        <main className="page-content">{renderView()}</main>
+        <main className="page-content">{renderAdminView()}</main>
       </div>
     </div>
   );
