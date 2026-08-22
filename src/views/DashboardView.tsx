@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
+  Download,
   Gauge,
   Recycle,
   Route,
@@ -41,16 +42,30 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       ? Math.round(bins.reduce((sum, b) => sum + b.fillLevel, 0) / totalBins)
       : 0;
   const resolvedReports = reports.filter((r) => r.status === 'Resolved').length;
-  const criticalBins = bins.filter((b) => b.fillLevel >= 80 || b.status === 'Critical');
+  const criticalBins = bins.filter((b) => b.fillLevel >= 90 || b.status === 'Critical');
+
+  const handleExportData = () => {
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      'Bin ID,Location,Suburb,Fill Level,Status,Priority\n' +
+      bins.map((b) => `${b.id},"${b.location}",${b.suburb},${b.fillLevel}%,${b.status},${b.collectionPriority}`).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'canberra_smartwaste_telemetry.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
       <div className="page-header page-header--row">
         <div>
-          <h1>TCCS Administrator Dashboard</h1>
+          <h1>TCCS Administrator Operations Dashboard</h1>
           <p>Canberra SmartWaste Management System — Territory & Municipal Services</p>
         </div>
-        <span className="live-pill">Live Telemetry · ACT Grid Active</span>
+        <span className="live-pill">Simulated Telemetry · ACT Prototype Grid Active</span>
       </div>
 
       {newReportCount > 0 && (
@@ -116,7 +131,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         <div className="card" style={{ marginBottom: '1.25rem', borderLeft: '4px solid #dc2626' }}>
           <div className="card-header">
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991b1b' }}>
-              <ShieldAlert size={20} /> Critical Smart-Bins Requiring Priority Pickup
+              <ShieldAlert size={20} /> Critical Smart-Bins (≥90% Full) Requiring Immediate Pickup
             </h2>
             <span className="badge badge-critical">{criticalBins.length} Bins</span>
           </div>
@@ -161,7 +176,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-header">
-            <h2>Live Canberra Bin Map</h2>
+            <h2>Prototype Smart-Bin Telemetry Map</h2>
             <button
               type="button"
               className="btn btn-secondary"
@@ -177,7 +192,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
 
         <div className="card">
           <div className="card-header">
-            <h2>System Alerts & Telemetry</h2>
+            <h2>Live System Alerts & Telemetry</h2>
             <span className="badge badge-critical">{criticalBinCount} critical</span>
           </div>
           <div className="card-body">
@@ -188,7 +203,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
                 className="btn btn-primary"
                 onClick={() => onNavigate?.('routes')}
               >
-                <Route size={16} /> View Optimized Routes
+                <Route size={16} /> View Collection Sequence
               </button>
             </div>
           </div>
@@ -207,7 +222,10 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
 
         <div className="card">
           <div className="card-header">
-            <h2>Smart Bin Telemetry Status</h2>
+            <h2>Smart Bin Telemetry Overview</h2>
+            <button type="button" className="btn btn-ghost" onClick={handleExportData}>
+              <Download size={14} /> Export CSV
+            </button>
           </div>
           <BinTable limit={6} />
         </div>
