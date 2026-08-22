@@ -188,3 +188,76 @@
   color: var(--gray-600);
   line-height: 1.5;
 }
+
+.demo-role-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.demo-role-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  color: var(--gray-700);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-role-chip.active {
+  border-color: var(--green-700, #0d5c4b);
+  background: #e6f4f1;
+  color: var(--green-950, #062b23);
+  box-shadow: 0 0 0 2px rgba(13, 92, 75, 0.2);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.login-field span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.login-field input {
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--gray-300);
+  font-size: 0.875rem;
+}
+
+.login-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.login-quick-actions button {
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+

@@ -1,5 +1,5 @@
 import { Bell, LogOut, Menu, Search, User } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../hooks/useApp';
 import { stats } from '../data/mockData';
 
 interface HeaderProps {
