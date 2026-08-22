@@ -93,11 +93,11 @@ $$\text{Priority Score} = \text{Fill Contribution} + \text{Urgency Contribution}
 
 For demonstration and grading evaluation, use the pre-configured accounts:
 
-| Role | Username / Email | Demo Password | Scope & Responsibilities |
+| Role | Prototype Email | Demo Password | Scope & Responsibilities |
 |---|---|---|---|
-| **Administrator** | `admin@canberra.act.gov.au` | `Delicious@1986` | Manager Dashboard, Critical Bins Spotlight, Report Review |
-| **Collection Staff** | `staff@canberra.act.gov.au` | `Jayhanuman@2005` | Priority Collection Queue, Pickup Execution ("Mark Collected") |
-| **Citizen User** | `citizen@canberra.act.gov.au` | `kodi12345$` | Public Reporting, Ref ID Generation, Report Tracking |
+| **Administrator** | `admin@smartwaste.demo` | `DemoAdmin123!` | Manager Dashboard, Critical Bins Spotlight, Report Administration |
+| **Collection Staff** | `staff@smartwaste.demo` | `DemoStaff123!` | Priority Collection Queue, Pickup Execution ("Mark Collected") |
+| **Citizen** | `citizen@smartwaste.demo` | `DemoCitizen123!` | Public Waste Reporting, Ref ID Generation, Report History |
 
 ---
 
@@ -129,7 +129,7 @@ npm run build
 
 ## 7. Team Responsibilities & Git Branch Workflow
 
-Active development for Iteration 1 was executed across four dedicated feature branches. Each member branch contains commits attributed to their specific Git identity:
+Active development for Iteration 1 was executed across five dedicated feature branches. Each member branch contains commits attributed to their specific Git identity:
 
 | Team Member | GitHub Handle | Git Author Name & Email | Feature Branch | Core Responsibilities |
 |---|---|---|---|---|
@@ -137,8 +137,7 @@ Active development for Iteration 1 was executed across four dedicated feature br
 | **Samir Bhandari** | `Samir0888` | `Samir Bhandari` <`sabhandarisamir2021@gmail.com`> | `samir-citizen-interface` | Citizen Reporting Interface, Form Validation, ACT Suburbs & Report Tracking History |
 | **Krishna Trivedi** | `KrishnaTriv` | `Krishna Trivedi` <`krishnatrivedi0507@gmail.com`> | `krishna-database-collection` | Typed Data Models, Local Persistence Service (`dataStore.ts`), Bin Status & Priority Algorithms |
 | **Ayush Ale** | `keinithaxinamalai-art` | `Ayush Ale` <`keinithaxinamalai@gmail.com`> | `ayush-auth-testing` | Role-based Auth, Demo Sign-In, AppContext State Integration & Automated Unit Tests |
-
-> **Notice regarding Team Member 5**: Charanpal Kaur (`charanpal06-coder` / `charanpalkaur06-coder`) is currently **ON HOLD**. Essential Iteration 1 functionality has not been allocated to her and her planned module remains documented for Iteration 2.
+| **Charanpal Kaur** | `charanpal06-coder` | `Charanpal Kaur` <`charanpalkaur1512@gmail.com`> | `charanpal-maintenance-analytics` | Smart Bin Diagnostics, Telemetry Alerts, Sensor Health Monitoring |
 
 ### Branch Structure
 ```text
@@ -147,7 +146,8 @@ main (stable release)
     ├── bijay-admin-dashboard
     ├── samir-citizen-interface
     ├── krishna-database-collection
-    └── ayush-auth-testing
+    ├── ayush-auth-testing
+    └── charanpal-maintenance-analytics
 ```
 
 ---
