@@ -1,9 +1,39 @@
 import type {
   BinStatusLabel,
   CollectionPriority,
+  CollectionStatus,
   PublicReport,
+  ReportStatus,
   ReportUrgency,
 } from '../types';
+
+/**
+ * Normalizes legacy report status strings to standard set:
+ * 'Submitted' | 'Under Review' | 'Scheduled' | 'Resolved'
+ */
+export function normalizeReportStatus(rawStatus?: string | null): ReportStatus {
+  if (!rawStatus) return 'Submitted';
+  const lower = rawStatus.toLowerCase().trim();
+  if (lower === 'new' || lower === 'submitted') return 'Submitted';
+  if (lower === 'assigned' || lower === 'under review' || lower === 'under_review') return 'Under Review';
+  if (lower === 'scheduled') return 'Scheduled';
+  if (lower === 'resolved') return 'Resolved';
+  return 'Submitted';
+}
+
+/**
+ * Normalizes collection status strings to standard set:
+ * 'Pending' | 'Scheduled' | 'In Progress' | 'Completed'
+ */
+export function normalizeCollectionStatus(rawStatus?: string | null): CollectionStatus {
+  if (!rawStatus) return 'Pending';
+  const lower = rawStatus.toLowerCase().trim();
+  if (lower === 'pending') return 'Pending';
+  if (lower === 'scheduled') return 'Scheduled';
+  if (lower === 'in progress' || lower === 'in_progress') return 'In Progress';
+  if (lower === 'completed') return 'Completed';
+  return 'Pending';
+}
 
 /**
  * Calculates smart bin fill-level status according to ACT SmartWaste guidelines.
@@ -14,14 +44,14 @@ import type {
  * 80 - 89%: Collection Required
  * 90 - 100%: Critical
  * 
- * Out-of-range sensor values (< 0, > 100, NaN) are safely clamped/handled.
+ * Safe handling: Invalid sensor inputs (-10, 105, NaN, null, undefined) are safely clamped/handled.
  */
-export function getBinStatus(rawFillLevel: number): BinStatusLabel {
+export function getBinStatus(rawFillLevel: unknown): BinStatusLabel {
   if (typeof rawFillLevel !== 'number' || Number.isNaN(rawFillLevel)) {
     return 'Normal';
   }
 
-  const fillLevel = Math.max(0, Math.min(100, rawFillLevel));
+  const fillLevel = Math.max(0, Math.min(100, Math.round(rawFillLevel)));
 
   if (fillLevel >= 90) return 'Critical';
   if (fillLevel >= 80) return 'Collection Required';
@@ -40,19 +70,9 @@ export interface CollectionPriorityResult {
 }
 
 /**
- * Deterministic Collection Priority Logic:
- * Priority score = fill-level contribution + urgency contribution + overdue-collection contribution
+ * Deterministic Collection Priority Algorithm:
+ * Priority score = fill-level contribution + urgency contribution + overdue contribution
  * 
- * Component calculations:
- * 1. Fill Level Contribution: fillLevel * 0.5 (max 50 points)
- * 2. Urgency Contribution:
- *    - Critical: 30 points
- *    - High: 20 points
- *    - Medium: 10 points
- *    - Low / None: 0 points
- * 3. Overdue Contribution: min(hoursSinceLastCollected * 0.8, 20 points)
- * 
- * Priority Classifications:
  * Score >= 80: Critical
  * Score >= 60: High
  * Score >= 40: Medium
@@ -75,7 +95,6 @@ export function calculateCollectionPriority(
     Low: 0,
   };
   const urgencyContribution = urgencyWeights[urgency] ?? 0;
-
   const overdueContribution = Math.min(20, safeHours * 0.8);
 
   const score = Math.round(
@@ -98,13 +117,21 @@ export function calculateCollectionPriority(
   };
 }
 
+/**
+ * Generates readable unique Report Reference IDs formatted as WST-2026-XXXX.
+ */
+export function generateReportId(): string {
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  return `WST-2026-${randomSuffix}`;
+}
+
 export interface ValidationResult {
   isValid: boolean;
   errors: Record<string, string>;
 }
 
 /**
- * Validates waste report submission forms to prevent empty or invalid data.
+ * Validates waste report submission forms to prevent empty or whitespace-only data.
  */
 export function validateWasteReport(
   data: Partial<PublicReport>
@@ -123,6 +150,10 @@ export function validateWasteReport(
 
   if (!data.issue) {
     errors.issue = 'Issue category must be selected.';
+  }
+
+  if (data.description && !data.description.trim()) {
+    errors.description = 'Description cannot consist only of whitespace.';
   }
 
   if (data.reporterEmail && data.reporterEmail.trim()) {

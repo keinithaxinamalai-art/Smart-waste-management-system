@@ -1,4 +1,10 @@
-export type UserRole = 'citizen' | 'staff' | 'admin' | 'manager' | 'driver' | null;
+export type UserRole = 'admin' | 'staff' | 'citizen' | null;
+
+export const ROLE_LABELS: Record<NonNullable<UserRole>, string> = {
+  admin: 'Administrator',
+  staff: 'Collection Staff',
+  citizen: 'Citizen',
+};
 
 export type ReportIssue =
   | 'overflow'
@@ -6,20 +12,13 @@ export type ReportIssue =
   | 'damaged'
   | 'missed_collection'
   | 'hazardous'
-  | 'general'
-  | 'full_bin'
-  | 'other';
+  | 'general';
 
 export type ReportUrgency = 'Low' | 'Medium' | 'High' | 'Critical';
 
-export type ReportStatus =
-  | 'Submitted'
-  | 'Under Review'
-  | 'Scheduled'
-  | 'Resolved'
-  | 'new'
-  | 'assigned'
-  | 'resolved';
+export type ReportStatus = 'Submitted' | 'Under Review' | 'Scheduled' | 'Resolved';
+
+export type CollectionStatus = 'Pending' | 'Scheduled' | 'In Progress' | 'Completed';
 
 export type WasteType = 'General' | 'Recyclable' | 'Organic' | 'Hazardous';
 
@@ -69,7 +68,7 @@ export interface CollectionRecord {
   suburb: string;
   location: string;
   scheduledDate: string;
-  status: 'Pending' | 'In Progress' | 'Completed';
+  status: CollectionStatus;
   priority: CollectionPriority;
   assignedTo: string;
   completedAt?: string;
@@ -79,5 +78,5 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'citizen' | 'staff' | 'admin';
+  role: 'admin' | 'staff' | 'citizen';
 }

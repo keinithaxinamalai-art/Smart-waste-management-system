@@ -3,11 +3,16 @@ import type {
   CollectionRecord,
   PublicReport,
 } from '../types';
-import { calculateCollectionPriority, getBinStatus } from '../utils/binUtils';
+import {
+  calculateCollectionPriority,
+  getBinStatus,
+  normalizeCollectionStatus,
+  normalizeReportStatus,
+} from '../utils/binUtils';
 
-const BINS_STORAGE_KEY = 'swm_bins_v1';
-const REPORTS_STORAGE_KEY = 'swm_reports_v1';
-const COLLECTIONS_STORAGE_KEY = 'swm_collections_v1';
+const BINS_STORAGE_KEY = 'swm_bins_v2';
+const REPORTS_STORAGE_KEY = 'swm_reports_v2';
+const COLLECTIONS_STORAGE_KEY = 'swm_collections_v2';
 
 export const CANBERRA_SUBURBS = [
   'Canberra City',
@@ -151,7 +156,7 @@ export const INITIAL_BINS: Bin[] = [
 
 export const INITIAL_REPORTS: PublicReport[] = [
   {
-    id: 'PR-1001',
+    id: 'WST-2026-1001',
     issue: 'overflow',
     issueLabel: 'Overflowing Bin',
     location: 'London Cct near Civic Square',
@@ -169,7 +174,7 @@ export const INITIAL_REPORTS: PublicReport[] = [
     lng: 149.13,
   },
   {
-    id: 'PR-1002',
+    id: 'WST-2026-1002',
     issue: 'damaged',
     issueLabel: 'Damaged Bin',
     location: 'Cohen St Interchange Stop A',
@@ -187,7 +192,7 @@ export const INITIAL_REPORTS: PublicReport[] = [
     lng: 149.064,
   },
   {
-    id: 'PR-1003',
+    id: 'WST-2026-1003',
     issue: 'hazardous',
     issueLabel: 'Hazardous Waste',
     location: 'Hibberson St Light Rail Station',
@@ -232,7 +237,7 @@ export const INITIAL_COLLECTIONS: CollectionRecord[] = [
     suburb: 'Dickson',
     location: 'Dickson — Woolley St Dining Strip',
     scheduledDate: '2026-08-22T21:00:00Z',
-    status: 'Pending',
+    status: 'Scheduled',
     priority: 'High',
     assignedTo: 'Route Driver 2 (ACT-TRK-02)',
   },
@@ -245,7 +250,11 @@ export function getStoredBins(): Bin[] {
       localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
       return INITIAL_BINS;
     }
-    return JSON.parse(raw);
+    const parsed: Bin[] = JSON.parse(raw);
+    return parsed.map((b) => ({
+      ...b,
+      status: getBinStatus(b.fillLevel),
+    }));
   } catch {
     return INITIAL_BINS;
   }
@@ -262,7 +271,11 @@ export function getStoredReports(): PublicReport[] {
       localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
       return INITIAL_REPORTS;
     }
-    return JSON.parse(raw);
+    const parsed: PublicReport[] = JSON.parse(raw);
+    return parsed.map((r) => ({
+      ...r,
+      status: normalizeReportStatus(r.status),
+    }));
   } catch {
     return INITIAL_REPORTS;
   }
@@ -279,7 +292,11 @@ export function getStoredCollections(): CollectionRecord[] {
       localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
       return INITIAL_COLLECTIONS;
     }
-    return JSON.parse(raw);
+    const parsed: CollectionRecord[] = JSON.parse(raw);
+    return parsed.map((c) => ({
+      ...c,
+      status: normalizeCollectionStatus(c.status),
+    }));
   } catch {
     return INITIAL_COLLECTIONS;
   }
@@ -290,12 +307,30 @@ export function saveStoredCollections(collections: CollectionRecord[]): void {
 }
 
 /**
+ * Resets all prototype localStorage data back to seeded demo state.
+ */
+export function resetDemoData(): {
+  bins: Bin[];
+  reports: PublicReport[];
+  collections: CollectionRecord[];
+} {
+  localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
+  localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
+  localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
+  return {
+    bins: INITIAL_BINS,
+    reports: INITIAL_REPORTS,
+    collections: INITIAL_COLLECTIONS,
+  };
+}
+
+/**
  * Executes a completed collection for a smart bin:
  * 1. Resets bin fill level to 5% (Normal status).
  * 2. Updates lastCollected timestamp.
  * 3. Re-calculates collection priority.
- * 4. Updates associated pending collection records to 'Completed'.
- * 5. Updates associated citizen waste reports for this bin to 'Resolved'.
+ * 4. Updates associated collection records to 'Completed'.
+ * 5. Updates associated waste reports for this bin to 'Resolved'.
  */
 export function executeBinCollection(binId: string): {
   updatedBins: Bin[];
