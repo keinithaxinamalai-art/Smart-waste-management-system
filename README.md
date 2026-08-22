@@ -138,7 +138,7 @@ Active development for Iteration 1 was executed across four dedicated feature br
 | **Krishna Trivedi** | `KrishnaTriv` | `Krishna Trivedi` <`krishnatrivedi0507@gmail.com`> | `krishna-database-collection` | Typed Data Models, Local Persistence Service (`dataStore.ts`), Bin Status & Priority Algorithms |
 | **Ayush Ale** | `keinithaxinamalai-art` | `Ayush Ale` <`keinithaxinamalai@gmail.com`> | `ayush-auth-testing` | Role-based Auth, Demo Sign-In, AppContext State Integration & Automated Unit Tests |
 
-> **Notice regarding Team Member 5**: Charanpal Kaur (`charanpalkaur06-coder`) is currently **ON HOLD**. Essential Iteration 1 functionality has not been allocated to her and her planned module remains documented for Iteration 2.
+> **Notice regarding Team Member 5**: Charanpal Kaur (`charanpal06-coder` / `charanpalkaur06-coder`) is currently **ON HOLD**. Essential Iteration 1 functionality has not been allocated to her and her planned module remains documented for Iteration 2.
 
 ### Branch Structure
 ```text
