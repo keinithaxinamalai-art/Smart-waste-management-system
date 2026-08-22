@@ -27,6 +27,7 @@ import {
   isExportCaptureMode,
   readSavedRole,
 } from './lib/routing';
+import type { UserRole } from './types';
 
 type AppScreen = 'login' | 'public' | 'app';
 
