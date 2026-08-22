@@ -2,7 +2,6 @@ import type {
   Bin,
   CollectionRecord,
   PublicReport,
-  ReportStatus,
 } from '../types';
 import { calculateCollectionPriority, getBinStatus } from '../utils/binUtils';
 
@@ -115,7 +114,7 @@ export const INITIAL_BINS: Bin[] = [
     status: getBinStatus(71),
     sensorStatus: 'Online',
     lastCollected: '2026-08-22T07:45:00Z',
-    collectionPriority: 'Moderate' as any,
+    collectionPriority: 'Medium',
     priorityScore: 55,
     lat: -35.345,
     lng: 149.086,
