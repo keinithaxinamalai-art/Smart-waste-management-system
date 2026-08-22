@@ -89,7 +89,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
           value={binsNeedingCollectionCount}
           sub="Fill Level ≥ 80%"
           icon={Truck}
-          variant="warning"
+          variant="alert"
         />
         <StatCard
           label="Avg Network Fill"

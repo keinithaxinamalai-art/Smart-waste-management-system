@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  AlertTriangle,
   Check,
   CheckCircle2,
   LogOut,
