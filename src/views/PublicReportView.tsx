@@ -7,7 +7,8 @@ import {
   Recycle,
   Send,
 } from 'lucide-react';
-import { issueLabels, useApp } from '../context/AppContext';
+import { ISSUE_LABELS } from '../constants/issueLabels';
+import { useApp } from '../hooks/useApp';
 import type { ReportIssue } from '../types';
 import './PublicReportView.css';
 
@@ -80,9 +81,11 @@ export function PublicReportView({
 
     const report = submitPublicReport({
       issue,
+      issueLabel: ISSUE_LABELS[issue],
       location: location.trim(),
       suburb,
       description: description.trim(),
+      urgency: 'Medium',
       binId: binId.trim() || undefined,
       reporterName: reporterName.trim() || undefined,
       reporterEmail: reporterEmail.trim() || undefined,
@@ -139,7 +142,7 @@ export function PublicReportView({
           <fieldset className="public-field">
             <legend>What&apos;s the issue?</legend>
             <div className="public-issue-grid">
-              {(Object.keys(issueLabels) as ReportIssue[]).map((key) => (
+              {(Object.keys(ISSUE_LABELS) as ReportIssue[]).map((key) => (
                 <label key={key} className={`public-issue ${issue === key ? 'active' : ''}`}>
                   <input
                     type="radio"
@@ -148,7 +151,7 @@ export function PublicReportView({
                     checked={issue === key}
                     onChange={() => setIssue(key)}
                   />
-                  {issueLabels[key]}
+                  {ISSUE_LABELS[key]}
                 </label>
               ))}
             </div>
