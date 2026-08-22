@@ -55,7 +55,7 @@ function initialRoute(): { screen: AppScreen; nav: NavId } {
   }
 
   const saved = readSavedRole();
-  if (saved === 'driver' || (saved as any) === 'staff') {
+  if (saved === 'driver' || (saved as UserRole) === 'staff') {
     return { screen: 'app', nav: 'driver' };
   }
 
