@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, Recycle, Shield, Truck, User } from 'lucide-react';
+import { AlertCircle, LogIn, Recycle, Shield, Truck, User } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
 import './LoginView.css';
 
@@ -20,18 +20,11 @@ export function LoginView({
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'citizen'>('admin');
   const [email, setEmail] = useState('admin@smartwaste.demo');
   const [password, setPassword] = useState('DemoAdmin123!');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const DEMO_ACCOUNTS: {
-    role: 'admin' | 'staff' | 'citizen';
-    title: string;
-    email: string;
-    pass: string;
-    name: string;
-    desc: string;
-    icon: typeof Shield;
-  }[] = [
+  const DEMO_ACCOUNTS = [
     {
-      role: 'admin',
+      role: 'admin' as const,
       title: 'Administrator',
       email: 'admin@smartwaste.demo',
       pass: 'DemoAdmin123!',
@@ -40,7 +33,7 @@ export function LoginView({
       icon: Shield,
     },
     {
-      role: 'staff',
+      role: 'staff' as const,
       title: 'Collection Staff',
       email: 'staff@smartwaste.demo',
       pass: 'DemoStaff123!',
@@ -49,7 +42,7 @@ export function LoginView({
       icon: Truck,
     },
     {
-      role: 'citizen',
+      role: 'citizen' as const,
       title: 'Citizen',
       email: 'citizen@smartwaste.demo',
       pass: 'DemoCitizen123!',
@@ -59,27 +52,47 @@ export function LoginView({
     },
   ];
 
-  const handleRoleSelect = (acc: typeof DEMO_ACCOUNTS[0]) => {
+  const handleRoleSelect = (acc: (typeof DEMO_ACCOUNTS)[0]) => {
     setSelectedRole(acc.role);
     setEmail(acc.email);
     setPassword(acc.pass);
+    setErrorMessage(null);
   };
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    const account = DEMO_ACCOUNTS.find((a) => a.role === selectedRole);
-    login(selectedRole, account?.name, email);
-    if (selectedRole === 'admin') onManagerLogin?.();
-    else if (selectedRole === 'staff') onDriverLogin?.();
+    setErrorMessage(null);
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const matchingAccount = DEMO_ACCOUNTS.find(
+      (a) => a.email.toLowerCase() === trimmedEmail && a.pass === password
+    );
+
+    if (!matchingAccount) {
+      setErrorMessage(
+        'Invalid prototype login credentials. Please use admin@smartwaste.demo / DemoAdmin123!, staff@smartwaste.demo / DemoStaff123!, or citizen@smartwaste.demo / DemoCitizen123!.'
+      );
+      return;
+    }
+
+    login(matchingAccount.role, matchingAccount.name, matchingAccount.email);
+    if (matchingAccount.role === 'admin') onManagerLogin?.();
+    else if (matchingAccount.role === 'staff') onDriverLogin?.();
     else onCitizenLogin?.();
   };
 
   const quickSignIn = (r: 'admin' | 'staff' | 'citizen') => {
+    setErrorMessage(null);
     const account = DEMO_ACCOUNTS.find((a) => a.role === r);
-    login(r, account?.name, account?.email);
-    if (r === 'admin') onManagerLogin?.();
-    else if (r === 'staff') onDriverLogin?.();
-    else onCitizenLogin?.();
+    if (account) {
+      setEmail(account.email);
+      setPassword(account.pass);
+      setSelectedRole(account.role);
+      login(r, account.name, account.email);
+      if (r === 'admin') onManagerLogin?.();
+      else if (r === 'staff') onDriverLogin?.();
+      else onCitizenLogin?.();
+    }
   };
 
   return (
@@ -99,6 +112,28 @@ export function LoginView({
           <p className="login-card-sub">
             Select a prototype role account to sign in and access the system.
           </p>
+
+          {errorMessage && (
+            <div
+              style={{
+                background: '#fef2f2',
+                color: '#991b1b',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+              }}
+              role="alert"
+            >
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <div className="demo-role-selector">
             {DEMO_ACCOUNTS.map((acc) => {
@@ -120,7 +155,7 @@ export function LoginView({
 
           <form className="login-form" onSubmit={handleSignIn}>
             <label className="login-field">
-              <span>Prototype Account Username</span>
+              <span>Prototype Account Email</span>
               <input
                 type="email"
                 value={email}
@@ -131,7 +166,7 @@ export function LoginView({
             <label className="login-field">
               <span>Prototype Account Password</span>
               <input
-                type="text"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
