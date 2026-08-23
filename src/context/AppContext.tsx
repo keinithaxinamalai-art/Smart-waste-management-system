@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { AppContext } from './AppContextObject';
 import {
+  assignCollectionRoute,
   executeBinCollection,
   getStoredBins,
   getStoredCollections,
@@ -95,7 +96,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const submitPublicReport = useCallback(
     (data: Omit<PublicReport, 'id' | 'status' | 'createdAt'>) => {
       const currentReports = getStoredReports();
-      const refId = generateReportId();
+      const existingIds = currentReports.map((r) => r.id);
+      const refId = generateReportId(existingIds);
       const newReport: PublicReport = {
         ...data,
         id: refId,
@@ -145,6 +147,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollections(updatedCollections);
   }, []);
 
+  const assignRoute = useCallback((driverName?: string) => {
+    const updatedCollections = assignCollectionRoute(driverName);
+    setCollections(updatedCollections);
+  }, []);
+
   const resetAllDemoData = useCallback(() => {
     const fresh = resetDemoData();
     setBins(fresh.bins);
@@ -183,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitPublicReport,
       setReportStatus,
       triggerCollection,
+      assignRoute,
       resetAllDemoData,
       refreshData,
     }),
@@ -201,6 +209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitPublicReport,
       setReportStatus,
       triggerCollection,
+      assignRoute,
       resetAllDemoData,
       refreshData,
     ]
