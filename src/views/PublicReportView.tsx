@@ -347,7 +347,7 @@ export function PublicReportView({
               <Search size={18} />
               <input
                 type="text"
-                placeholder="Search by Reference ID (e.g. PR-1001) or Suburb..."
+                placeholder="Search by Reference ID (e.g. WST-2026-1001) or Suburb..."
                 value={searchRef}
                 onChange={(e) => setSearchRef(e.target.value)}
               />
