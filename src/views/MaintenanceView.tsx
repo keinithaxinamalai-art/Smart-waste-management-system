@@ -1,18 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, BatteryCharging, CheckCircle2, Radio, ShieldAlert, Wrench } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
 import './MaintenanceView.css';
 
+const TICKET_STORAGE_KEY = 'swm_ack_tickets_v1';
+
 export function MaintenanceView() {
   const { bins } = useApp();
-  const [resolvedTickets, setResolvedTickets] = useState<string[]>([]);
+  const [resolvedTickets, setResolvedTickets] = useState<string[]>(() => {
+    try {
+      const saved = sessionStorage.getItem(TICKET_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(resolvedTickets));
+  }, [resolvedTickets]);
 
   const faultBins = bins.filter(
-    (b) => (b.sensorStatus === 'Fault' || b.sensorStatus === 'Warning' || b.sensorStatus === 'Offline') &&
+    (b) =>
+      (b.sensorStatus === 'Fault' || b.sensorStatus === 'Warning' || b.sensorStatus === 'Offline') &&
       !resolvedTickets.includes(b.id)
   );
 
-  const handleResolveTicket = (binId: string) => {
+  const handleAcknowledgeTicket = (binId: string) => {
     setResolvedTickets((prev) => [...prev, binId]);
   };
 
@@ -20,7 +34,7 @@ export function MaintenanceView() {
     <>
       <div className="page-header">
         <h1>Smart Bin Maintenance & Sensor Diagnostics</h1>
-        <p>Telemetry status monitoring, sensor battery levels, and technician dispatches</p>
+        <p>Telemetry status monitoring, sensor battery levels, and prototype maintenance ticket acknowledgements</p>
       </div>
 
       <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
@@ -67,7 +81,7 @@ export function MaintenanceView() {
           {faultBins.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#16a34a' }}>
               <CheckCircle2 size={40} style={{ margin: '0 auto 0.5rem' }} />
-              <p style={{ fontWeight: 600 }}>All smart bin telemetry sensors are fully operational.</p>
+              <p style={{ fontWeight: 600 }}>All smart bin telemetry sensors are fully operational or acknowledged.</p>
             </div>
           ) : (
             <ul className="maintenance-list">
@@ -96,9 +110,9 @@ export function MaintenanceView() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => handleResolveTicket(bin.id)}
+                    onClick={() => handleAcknowledgeTicket(bin.id)}
                   >
-                    <Wrench size={14} /> Dispatch Technician
+                    <Wrench size={14} /> Acknowledge Ticket
                   </button>
                 </li>
               ))}
