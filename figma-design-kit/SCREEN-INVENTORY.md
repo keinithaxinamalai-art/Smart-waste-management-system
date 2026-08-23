@@ -78,7 +78,7 @@ Maps each React view to a Figma frame. Match the running app via `?export=` URLs
 
 ### 08b Public Report — Success
 
-- Check icon, reference ID (e.g. `PR-DEMO001`), thank-you copy, **Done** button.
+- Check icon, reference ID (e.g. `WST-2026-1001`), thank-you copy, **Done** button.
 
 ### 09 Public Reports (Admin)
 
