@@ -7,6 +7,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
+import { getBinStatus } from '../utils/binUtils';
 import './DriverView.css';
 
 interface DriverViewProps {
@@ -17,9 +18,12 @@ export function DriverView({ onLogout }: DriverViewProps) {
   const { bins, triggerCollection } = useApp();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Filter bins needing attention and sort by priority score descending
+  // Filter required priority stops (fillLevel >= 80%) sorted by priority score descending
   const queue = [...bins]
-    .filter((b) => b.fillLevel >= 50 || b.collectionPriority === 'Critical' || b.collectionPriority === 'High')
+    .filter((b) => {
+      const status = getBinStatus(b.fillLevel);
+      return status === 'Critical' || status === 'Collection Required';
+    })
     .sort((a, b) => b.priorityScore - a.priorityScore);
 
   const nextStop = queue.length > 0 ? queue[0] : null;
@@ -35,7 +39,7 @@ export function DriverView({ onLogout }: DriverViewProps) {
     <div className="driver-container">
       <div className="page-header">
         <h1>Collection Staff — Route ACT-R104</h1>
-        <p>Active collection run · Prioritized by smart-bin fill telemetry</p>
+        <p>Active collection run · Prioritized by smart-bin fill telemetry (≥80% fill)</p>
       </div>
 
       {successMsg && (
@@ -67,8 +71,13 @@ export function DriverView({ onLogout }: DriverViewProps) {
               <MapPin size={16} /> {nextStop.location} ({nextStop.suburb})
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <span className="badge badge-critical" style={{ fontSize: '0.9rem' }}>
-                {nextStop.fillLevel}% Fill
+              <span
+                className={`badge ${
+                  nextStop.fillLevel >= 90 ? 'badge-critical' : 'badge-warning'
+                }`}
+                style={{ fontSize: '0.9rem' }}
+              >
+                {nextStop.fillLevel}% Fill ({getBinStatus(nextStop.fillLevel)})
               </span>
               <span className="badge badge-warning" style={{ fontSize: '0.9rem' }}>
                 Priority: {nextStop.collectionPriority} ({nextStop.priorityScore})
@@ -152,7 +161,7 @@ export function DriverView({ onLogout }: DriverViewProps) {
                     <td>{b.location} ({b.suburb})</td>
                     <td>
                       <span className={b.fillLevel >= 80 ? 'text-danger font-bold' : ''}>
-                        {b.fillLevel}%
+                        {b.fillLevel}% ({getBinStatus(b.fillLevel)})
                       </span>
                     </td>
                     <td>{b.priorityScore} ({b.collectionPriority})</td>
