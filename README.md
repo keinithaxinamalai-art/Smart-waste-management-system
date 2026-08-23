@@ -33,7 +33,7 @@ Urban waste management in Canberra faces challenges due to fixed collection sche
 
 ## 3. Technology Stack & System Architecture
 
-- **Frontend Core**: React 19, TypeScript 5.8, Vite 8
+- **Frontend Core**: React 19, TypeScript 6.0, Vite 8
 - **Styling**: Modular Vanilla CSS with CSS Custom Properties
 - **Icons & Data Visualization**: Lucide React, Recharts
 - **Testing Infrastructure**: Vitest (Automated Unit Testing), ESLint 10
