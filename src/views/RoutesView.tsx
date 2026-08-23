@@ -1,21 +1,26 @@
 import { useState } from 'react';
 import { CheckCircle2, Route, Truck } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
+import { getBinStatus } from '../utils/binUtils';
 import './RoutesView.css';
 
 export function RoutesView() {
-  const { bins } = useApp();
+  const { bins, assignRoute } = useApp();
   const [assigned, setAssigned] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Generate suggested sequence from bins requiring collection sorted by priority score
+  // Required collection sequence strictly uses fillLevel >= 80 (Collection Required & Critical)
   const sequence = [...bins]
-    .filter((b) => b.fillLevel >= 50)
+    .filter((b) => {
+      const status = getBinStatus(b.fillLevel);
+      return status === 'Critical' || status === 'Collection Required';
+    })
     .sort((a, b) => b.priorityScore - a.priorityScore);
 
   const handleAssignDriver = () => {
+    assignRoute('Route Driver 1 (ACT-TRK-04)');
     setAssigned(true);
-    setToast('Suggested collection sequence assigned to Route Driver 1 (ACT-TRK-04)!');
+    setToast('Suggested collection sequence assigned and persisted to Route Driver 1 (ACT-TRK-04)!');
     setTimeout(() => setToast(null), 4000);
   };
 
@@ -23,7 +28,7 @@ export function RoutesView() {
     <>
       <div className="page-header">
         <h1>Suggested Collection Sequence</h1>
-        <p>Demonstration collection order based on current smart-bin collection priorities</p>
+        <p>Demonstration collection order based on current smart-bin collection priorities (≥80% fill)</p>
       </div>
 
       {toast && (
@@ -80,12 +85,10 @@ export function RoutesView() {
                     className={`route-fill ${
                       stop.fillLevel >= 90
                         ? 'route-fill--high'
-                        : stop.fillLevel >= 80
-                        ? 'route-fill--warn'
-                        : ''
+                        : 'route-fill--warn'
                     }`}
                   >
-                    {stop.fillLevel}% ({stop.collectionPriority})
+                    {stop.fillLevel}% ({getBinStatus(stop.fillLevel)})
                   </span>
                 </li>
               ))}
@@ -101,7 +104,7 @@ export function RoutesView() {
             <div className="route-summary-stat">
               <Route size={24} />
               <div>
-                <span className="route-summary-value">{sequence.length} Priority Stops</span>
+                <span className="route-summary-value">{sequence.length} Required Stops</span>
                 <span className="route-summary-label">Estimated route duration: ~1h 45m</span>
               </div>
             </div>
