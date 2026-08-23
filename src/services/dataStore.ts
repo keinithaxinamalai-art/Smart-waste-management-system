@@ -14,6 +14,8 @@ const BINS_STORAGE_KEY = 'swm_bins_v2';
 const REPORTS_STORAGE_KEY = 'swm_reports_v2';
 const COLLECTIONS_STORAGE_KEY = 'swm_collections_v2';
 
+const isStorageAvailable = typeof localStorage !== 'undefined';
+
 export const CANBERRA_SUBURBS = [
   'Canberra City',
   'Belconnen',
@@ -244,6 +246,7 @@ export const INITIAL_COLLECTIONS: CollectionRecord[] = [
 ];
 
 export function getStoredBins(): Bin[] {
+  if (!isStorageAvailable) return INITIAL_BINS;
   try {
     const raw = localStorage.getItem(BINS_STORAGE_KEY);
     if (!raw) {
@@ -261,10 +264,13 @@ export function getStoredBins(): Bin[] {
 }
 
 export function saveStoredBins(bins: Bin[]): void {
-  localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(bins));
+  if (isStorageAvailable) {
+    localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(bins));
+  }
 }
 
 export function getStoredReports(): PublicReport[] {
+  if (!isStorageAvailable) return INITIAL_REPORTS;
   try {
     const raw = localStorage.getItem(REPORTS_STORAGE_KEY);
     if (!raw) {
@@ -282,10 +288,13 @@ export function getStoredReports(): PublicReport[] {
 }
 
 export function saveStoredReports(reports: PublicReport[]): void {
-  localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(reports));
+  if (isStorageAvailable) {
+    localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(reports));
+  }
 }
 
 export function getStoredCollections(): CollectionRecord[] {
+  if (!isStorageAvailable) return INITIAL_COLLECTIONS;
   try {
     const raw = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
     if (!raw) {
@@ -303,7 +312,9 @@ export function getStoredCollections(): CollectionRecord[] {
 }
 
 export function saveStoredCollections(collections: CollectionRecord[]): void {
-  localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(collections));
+  if (isStorageAvailable) {
+    localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(collections));
+  }
 }
 
 /**
@@ -314,9 +325,11 @@ export function resetDemoData(): {
   reports: PublicReport[];
   collections: CollectionRecord[];
 } {
-  localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
-  localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
-  localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
+  if (isStorageAvailable) {
+    localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
+    localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
+    localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
+  }
   return {
     bins: INITIAL_BINS,
     reports: INITIAL_REPORTS,
@@ -325,12 +338,33 @@ export function resetDemoData(): {
 }
 
 /**
+ * Assigns collection route to a driver and updates pending collection records to 'Scheduled'.
+ */
+export function assignCollectionRoute(
+  driverName: string = 'Route Driver 1 (ACT-TRK-04)'
+): CollectionRecord[] {
+  const collections = getStoredCollections();
+  const updated = collections.map((col) => {
+    if (col.status === 'Pending') {
+      return {
+        ...col,
+        status: 'Scheduled' as const,
+        assignedTo: driverName,
+      };
+    }
+    return col;
+  });
+  saveStoredCollections(updated);
+  return updated;
+}
+
+/**
  * Executes a completed collection for a smart bin:
  * 1. Resets bin fill level to 5% (Normal status).
  * 2. Updates lastCollected timestamp.
  * 3. Re-calculates collection priority.
  * 4. Updates associated collection records to 'Completed'.
- * 5. Updates associated waste reports for this bin to 'Resolved'.
+ * 5. Updates waste reports EXPLICITLY LINKED to this binId to 'Resolved'.
  */
 export function executeBinCollection(binId: string): {
   updatedBins: Bin[];
@@ -341,8 +375,6 @@ export function executeBinCollection(binId: string): {
   const reports = getStoredReports();
   const collections = getStoredCollections();
   const now = new Date().toISOString();
-
-  const targetBin = bins.find((b) => b.id === binId);
 
   const updatedBins = bins.map((bin) => {
     if (bin.id !== binId) return bin;
@@ -366,11 +398,9 @@ export function executeBinCollection(binId: string): {
     return col;
   });
 
+  // STRICT RESOLUTION RULE: Resolve ONLY reports where report.binId === binId
   const updatedReports = reports.map((rep) => {
-    if (
-      (rep.binId === binId || (targetBin && rep.location.includes(targetBin.suburb))) &&
-      rep.status !== 'Resolved'
-    ) {
+    if (rep.binId === binId && rep.status !== 'Resolved') {
       return { ...rep, status: 'Resolved' as const };
     }
     return rep;

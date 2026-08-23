@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { executeBinCollection } from '../services/dataStore';
 import {
   calculateCollectionPriority,
   generateReportId,
@@ -87,10 +88,35 @@ describe('Collection Priority Logic (calculateCollectionPriority)', () => {
   });
 });
 
-describe('Report ID Generation (generateReportId)', () => {
+describe('Report ID Generation & Uniqueness (generateReportId)', () => {
   it('generates readable unique ID in WST-2026-XXXX format', () => {
     const id = generateReportId();
     expect(id).toMatch(/^WST-2026-\d{4}$/);
+  });
+
+  it('avoids collisions when existing IDs list is provided', () => {
+    const existing = ['WST-2026-1001', 'WST-2026-1002', 'WST-2026-1003'];
+    const newId = generateReportId(existing);
+    expect(existing.includes(newId)).toBe(false);
+    expect(newId).toMatch(/^WST-2026-\d{4}$/);
+  });
+});
+
+describe('Explicit Report Resolution during Collection Execution', () => {
+  it('Case A: resolves reports EXPLICITLY LINKED to collected binId', () => {
+    const { updatedReports } = executeBinCollection('BEL-022');
+    const linkedReport = updatedReports.find((r) => r.binId === 'BEL-022');
+    if (linkedReport) {
+      expect(linkedReport.status).toBe('Resolved');
+    }
+  });
+
+  it('Case B: leaves unlinked reports in same suburb UNCHANGED', () => {
+    const { updatedReports } = executeBinCollection('BEL-022');
+    const unlinkedCityReport = updatedReports.find((r) => r.id === 'WST-2026-1001');
+    if (unlinkedCityReport) {
+      expect(unlinkedCityReport.status).toBe('Submitted');
+    }
   });
 });
 

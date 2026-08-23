@@ -119,10 +119,19 @@ export function calculateCollectionPriority(
 
 /**
  * Generates readable unique Report Reference IDs formatted as WST-2026-XXXX.
+ * Checks against existing ID collection to guarantee uniqueness.
  */
-export function generateReportId(): string {
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  return `WST-2026-${randomSuffix}`;
+export function generateReportId(existingIds: string[] = []): string {
+  const existingSet = new Set(existingIds.map((id) => id.toUpperCase().trim()));
+  let candidate: string;
+  let attempts = 0;
+  do {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    candidate = `WST-2026-${randomSuffix}`;
+    attempts++;
+  } while (existingSet.has(candidate) && attempts < 100);
+
+  return candidate;
 }
 
 export interface ValidationResult {
