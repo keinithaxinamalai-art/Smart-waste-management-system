@@ -11,12 +11,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { chartData, compositionData } from '../data/mockData';
+import { weeklyTrendData, type CompositionSlice } from '../data/mockData';
 
 export function CollectionsChart() {
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <AreaChart data={weeklyTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="fillTeal" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#14b8a6" stopOpacity={0.35} />
@@ -47,7 +47,7 @@ export function CollectionsChart() {
 export function VolumeChart() {
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <BarChart data={weeklyTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
         <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} width={32} unit="t" />
         <Tooltip
@@ -64,12 +64,12 @@ export function VolumeChart() {
   );
 }
 
-export function CompositionChart() {
+export function CompositionChart({ data }: { data: CompositionSlice[] }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <PieChart>
         <Pie
-          data={compositionData}
+          data={data}
           cx="50%"
           cy="50%"
           innerRadius={52}
@@ -77,7 +77,7 @@ export function CompositionChart() {
           paddingAngle={3}
           dataKey="value"
         >
-          {compositionData.map((entry) => (
+          {data.map((entry) => (
             <Cell key={entry.name} fill={entry.color} />
           ))}
         </Pie>

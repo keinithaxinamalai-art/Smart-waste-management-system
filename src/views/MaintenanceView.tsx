@@ -169,7 +169,7 @@ export function MaintenanceView() {
                           className="btn btn-secondary"
                           onClick={() => setTicketStatus(ticket.id, 'In Progress')}
                         >
-                          <Wrench size={14} /> Start Work
+                          <Wrench size={14} /> Acknowledge Ticket
                         </button>
                       )}
                       {ticket.status === 'In Progress' && (
