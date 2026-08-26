@@ -1,18 +1,22 @@
 import type {
   Bin,
   CollectionRecord,
+  MaintenanceTicket,
   PublicReport,
+  TicketStatus,
 } from '../types';
 import {
   calculateCollectionPriority,
   getBinStatus,
   normalizeCollectionStatus,
   normalizeReportStatus,
+  normalizeTicketStatus,
 } from '../utils/binUtils';
 
 const BINS_STORAGE_KEY = 'swm_bins_v2';
 const REPORTS_STORAGE_KEY = 'swm_reports_v2';
 const COLLECTIONS_STORAGE_KEY = 'swm_collections_v2';
+const TICKETS_STORAGE_KEY = 'swm_tickets_v1';
 
 const isStorageAvailable = typeof localStorage !== 'undefined';
 
@@ -77,7 +81,7 @@ export const INITIAL_BINS: Bin[] = [
     fillLevel: 42,
     wasteType: 'Organic',
     status: getBinStatus(42),
-    sensorStatus: 'Online',
+    sensorStatus: 'Warning',
     lastCollected: '2026-08-22T11:00:00Z',
     collectionPriority: 'Low',
     priorityScore: 21,
@@ -147,7 +151,7 @@ export const INITIAL_BINS: Bin[] = [
     fillLevel: 34,
     wasteType: 'General',
     status: getBinStatus(34),
-    sensorStatus: 'Online',
+    sensorStatus: 'Offline',
     lastCollected: '2026-08-22T10:00:00Z',
     collectionPriority: 'Low',
     priorityScore: 17,
@@ -245,6 +249,53 @@ export const INITIAL_COLLECTIONS: CollectionRecord[] = [
   },
 ];
 
+export const INITIAL_TICKETS: MaintenanceTicket[] = [
+  {
+    id: 'MT-101',
+    binId: 'GUN-015',
+    location: 'Gungahlin — Hibberson St Light Rail',
+    suburb: 'Gungahlin',
+    faultType: 'sensor_error',
+    status: 'Open',
+    createdAt: new Date(Date.now() - 3600000 * 8).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000 * 8).toISOString(),
+    notes: 'Ultrasonic fill sensor dropped three consecutive heartbeats.',
+  },
+  {
+    id: 'MT-102',
+    binId: 'TUG-009',
+    location: 'Tuggeranong — Anketell St Mall',
+    suburb: 'Tuggeranong',
+    faultType: 'low_battery',
+    status: 'Open',
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    notes: 'Battery telemetry reported 14% remaining voltage.',
+  },
+  {
+    id: 'MT-103',
+    binId: 'WOD-007',
+    location: 'Woden — Bowes St Plaza',
+    suburb: 'Woden',
+    faultType: 'lid_jam',
+    status: 'In Progress',
+    createdAt: new Date(Date.now() - 3600000 * 10).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    notes: 'Lid actuator jammed after peak lunch traffic. Technician assigned.',
+  },
+  {
+    id: 'MT-104',
+    binId: 'KNG-019',
+    location: 'Kingston — Foreshore Promenade',
+    suburb: 'Kingston',
+    faultType: 'offline',
+    status: 'Open',
+    createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+    notes: 'No RF ping received for more than 2 hours.',
+  },
+];
+
 export function getStoredBins(): Bin[] {
   if (!isStorageAvailable) return INITIAL_BINS;
   try {
@@ -317,6 +368,47 @@ export function saveStoredCollections(collections: CollectionRecord[]): void {
   }
 }
 
+export function getStoredTickets(): MaintenanceTicket[] {
+  if (!isStorageAvailable) return INITIAL_TICKETS;
+  try {
+    const raw = localStorage.getItem(TICKETS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(INITIAL_TICKETS));
+      return INITIAL_TICKETS;
+    }
+    const parsed: MaintenanceTicket[] = JSON.parse(raw);
+    return parsed.map((t) => ({
+      ...t,
+      status: normalizeTicketStatus(t.status),
+    }));
+  } catch {
+    return INITIAL_TICKETS;
+  }
+}
+
+export function saveStoredTickets(tickets: MaintenanceTicket[]): void {
+  if (isStorageAvailable) {
+    localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
+  }
+}
+
+/**
+ * Advances a technician work order through Open → In Progress → Resolved.
+ */
+export function updateMaintenanceTicketStatus(
+  ticketId: string,
+  status: TicketStatus
+): MaintenanceTicket[] {
+  const tickets = getStoredTickets();
+  const nextStatus = normalizeTicketStatus(status);
+  const now = new Date().toISOString();
+  const updated = tickets.map((ticket) =>
+    ticket.id === ticketId ? { ...ticket, status: nextStatus, updatedAt: now } : ticket
+  );
+  saveStoredTickets(updated);
+  return updated;
+}
+
 /**
  * Resets all prototype localStorage data back to seeded demo state.
  */
@@ -324,16 +416,19 @@ export function resetDemoData(): {
   bins: Bin[];
   reports: PublicReport[];
   collections: CollectionRecord[];
+  tickets: MaintenanceTicket[];
 } {
   if (isStorageAvailable) {
     localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
     localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
     localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
+    localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(INITIAL_TICKETS));
   }
   return {
     bins: INITIAL_BINS,
     reports: INITIAL_REPORTS,
     collections: INITIAL_COLLECTIONS,
+    tickets: INITIAL_TICKETS,
   };
 }
 

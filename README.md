@@ -1,7 +1,20 @@
 # Canberra SmartWaste: Smart Waste Management System for Canberra
 
+[![Quality Controls](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/actions/workflows/ci.yml)
+
 > **ICT308 – Project 2 (BIT Capstone Project)**  
-> **Iteration 1 Prototype** · Transport Canberra & City Services (TCCS) Smart Waste Demonstration Build
+> **Iteration 1 Prototype** · Transport Canberra & City Services (TCCS) Smart Waste Demonstration Build  
+> **Repository:** https://github.com/keinithaxinamalai-art/Smart-waste-management-system
+
+Live prototype (GitHub Pages, after the Pages workflow has published `main`):  
+https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
+
+Assessment documents in this repository:
+
+- [Iteration 1 technical report](docs/ICT308-Iteration1-Technical-Report.md)
+- [GitHub version-control evidence](docs/GITHUB-EVIDENCE.md)
+- [Contributing / branch workflow](CONTRIBUTING.md)
+
 
 ---
 
@@ -25,9 +38,11 @@ Urban waste management in Canberra faces challenges due to fixed collection sche
 - **Simulated Smart-Bin Monitoring**: Fill percentages, priority badges, and sensor status (`Online`, `Warning`, `Fault`, `Offline`).
 - **Deterministic Collection Priority Algorithm**: Formula-based priority scoring (`Critical`, `High`, `Medium`, `Low`).
 - **Interactive Collection Management**: Staff and Admins can mark bins as collected, immediately updating bin fill levels to 5% (Normal), resolving associated reports, updating alerts, and refreshing live dashboard metrics.
+- **Smart Bin Diagnostics**: Maintenance view tracks simulated sensor errors, low-battery alerts, lid mechanism jams, and offline modules. Technician work orders move **Open → In Progress → Resolved** and persist in `localStorage`.
 - **Demo Data Reset**: Administrator header feature allowing instant restoration of default seeded demo data during presentations.
 - **Data Persistence**: Reactive client-side store backed by `localStorage` with safe schema migration helpers.
 - **Automated Unit Testing**: Test suite verifying business logic algorithms using `vitest`.
+- **GitHub Quality Controls**: GitHub Actions runs ESLint, Vitest, and the production build on every pull request.
 
 ---
 
@@ -43,7 +58,7 @@ Urban waste management in Canberra faces challenges due to fixed collection sche
 src/
 ├── assets/         # Static visual assets
 ├── components/     # Header, Sidebar, BinTable, StatCard, MapPanel, AlertsList, Charts
-├── constants/      # Global constants (ISSUE_LABELS)
+├── constants/      # ISSUE_LABELS, FAULT_LABELS
 ├── context/        # React context (AppProvider, AppContextObject)
 ├── hooks/          # Custom hooks (useApp)
 ├── lib/            # Routing helpers
@@ -147,6 +162,10 @@ main (stable release)
     └── charanpal-maintenance-analytics
 ```
 
+Merged module pull requests: [#1](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/1) Ayush, [#2](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/2) Bijay, [#3](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/3) Samir, [#4](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/4) Krishna, [#5](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/5) develop integration. See [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md) for the full version-control record.
+
+New work should follow [CONTRIBUTING.md](CONTRIBUTING.md): branch from `develop`, open a PR with the module checklist, and wait for GitHub Actions (lint, test, build) to pass.
+
 ---
 
 ## 8. Recommended Demonstration Flow (Manual Test Stages A–I)
@@ -160,3 +179,14 @@ main (stable release)
 7. **G – Collection Pickup Execution**: Log in as `staff@smartwaste.demo`. Open collection queue. Click **Mark Collected** for `WDN-104`. Verify fill resets to 5%, status becomes Normal, and last collected date updates.
 8. **H – Cross-Screen Consistency**: Verify `WDN-104` updated to 5% across Map, Bin Table, Alerts, and Dashboard statistics.
 9. **I – Demo Reset**: Log in as Admin. Click **Reset Demo Data** in header to restore default presentation state.
+10. **J – Maintenance lifecycle**: Open Maintenance. Confirm seeded work orders for sensor error, low battery, lid jam, and offline. Click **Start Work** on an Open ticket (status becomes In Progress), then **Mark Resolved** on the lid-jam ticket.
+
+---
+
+## 9. Quality Controls
+
+| Check | Command | Automation |
+|---|---|---|
+| Unit tests (fill-level tiers, clamping, priority, report IDs, collection↔report integrity, ticket lifecycle) | `npm test` | GitHub Actions `ci.yml` |
+| ESLint | `npm run lint` | GitHub Actions `ci.yml` |
+| Production build | `npm run build` | GitHub Actions `ci.yml` + Pages deploy |

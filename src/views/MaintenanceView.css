@@ -49,3 +49,105 @@
   font-size: 0.8125rem;
   color: var(--gray-600);
 }
+
+.maintenance-meta {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.maintenance-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.maintenance-resolved-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.ticket-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ticket-filter-chip {
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+
+.ticket-filter-chip.active {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.ticket-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ticket-status--open {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ticket-status--in-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.ticket-status--resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.maintenance-icon--sensor_error {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.maintenance-icon--low_battery {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.maintenance-icon--lid_jam {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.maintenance-icon--offline {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+@media (max-width: 720px) {
+  .maintenance-item {
+    flex-wrap: wrap;
+  }
+
+  .maintenance-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+}

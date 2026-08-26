@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a defect in the Canberra SmartWaste Iteration 1 prototype
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Affected role
+      options:
+        - Unauthenticated / public
+        - Citizen
+        - Collection Staff
+        - Administrator
+        - All roles
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module / domain
+      options:
+        - Admin Management (bijay-admin-dashboard)
+        - Session & Testing (ayush-auth-testing)
+        - Citizen Reporting (samir-citizen-interface)
+        - Data Persistence (krishna-database-collection)
+        - Operations & Maintenance (charanpal-maintenance-analytics)
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as …
+        2. Open …
+        3. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true

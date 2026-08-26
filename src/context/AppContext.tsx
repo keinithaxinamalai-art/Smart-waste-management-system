@@ -12,11 +12,13 @@ import {
   getStoredBins,
   getStoredCollections,
   getStoredReports,
+  getStoredTickets,
   resetDemoData,
   saveStoredBins,
   saveStoredReports,
+  updateMaintenanceTicketStatus,
 } from '../services/dataStore';
-import type { Bin, CollectionPriority, CollectionRecord, PublicReport, ReportStatus, UserRole } from '../types';
+import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -41,11 +43,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [collections, setCollections] = useState<CollectionRecord[]>(() =>
     getStoredCollections()
   );
+  const [tickets, setTickets] = useState<MaintenanceTicket[]>(() => getStoredTickets());
 
   const refreshData = useCallback(() => {
     setBins(getStoredBins());
     setReports(getStoredReports());
     setCollections(getStoredCollections());
+    setTickets(getStoredTickets());
   }, []);
 
   useEffect(() => {
@@ -152,11 +156,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollections(updatedCollections);
   }, []);
 
+  const setTicketStatus = useCallback((id: string, status: TicketStatus) => {
+    const updated = updateMaintenanceTicketStatus(id, status);
+    setTickets(updated);
+  }, []);
+
   const resetAllDemoData = useCallback(() => {
     const fresh = resetDemoData();
     setBins(fresh.bins);
     setReports(fresh.reports);
     setCollections(fresh.collections);
+    setTickets(fresh.tickets);
   }, []);
 
   const newReportCount = useMemo(
@@ -182,6 +192,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bins,
       reports,
       collections,
+      tickets,
       newReportCount,
       criticalBinCount,
       binsNeedingCollectionCount,
@@ -191,6 +202,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReportStatus,
       triggerCollection,
       assignRoute,
+      setTicketStatus,
       resetAllDemoData,
       refreshData,
     }),
@@ -201,6 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bins,
       reports,
       collections,
+      tickets,
       newReportCount,
       criticalBinCount,
       binsNeedingCollectionCount,
@@ -210,6 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReportStatus,
       triggerCollection,
       assignRoute,
+      setTicketStatus,
       resetAllDemoData,
       refreshData,
     ]
