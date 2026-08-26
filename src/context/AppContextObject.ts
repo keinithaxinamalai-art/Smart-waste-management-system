@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Bin, CollectionRecord, PublicReport, ReportStatus, UserRole } from '../types';
+import type { Bin, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 
 export interface AppContextValue {
   role: UserRole;
@@ -8,6 +8,7 @@ export interface AppContextValue {
   bins: Bin[];
   reports: PublicReport[];
   collections: CollectionRecord[];
+  tickets: MaintenanceTicket[];
   newReportCount: number;
   criticalBinCount: number;
   binsNeedingCollectionCount: number;
@@ -19,6 +20,7 @@ export interface AppContextValue {
   setReportStatus: (id: string, status: ReportStatus) => void;
   triggerCollection: (binId: string) => void;
   assignRoute: (driverName?: string) => void;
+  setTicketStatus: (id: string, status: TicketStatus) => void;
   resetAllDemoData: () => void;
   refreshData: () => void;
 }

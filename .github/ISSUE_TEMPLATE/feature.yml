@@ -1,0 +1,38 @@
+name: Feature / user story
+description: Track an Iteration 1 module story that maps to a GitHub feature branch and Jira backlog item
+title: '[Story] '
+labels: ['enhancement']
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module / domain
+      description: Matches the GitHub branching table in the Iteration 1 presentation
+      options:
+        - Admin Management (bijay-admin-dashboard)
+        - Session & Testing (ayush-auth-testing)
+        - Citizen Reporting (samir-citizen-interface)
+        - Data Persistence (krishna-database-collection)
+        - Operations & Maintenance (charanpal-maintenance-analytics)
+    validations:
+      required: true
+  - type: input
+    id: jira
+    attributes:
+      label: Jira issue
+      placeholder: ICT308-12
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      placeholder: As a TCCS administrator, I want … so that …
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] …
+    validations:
+      required: true

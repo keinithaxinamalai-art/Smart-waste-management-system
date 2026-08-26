@@ -5,6 +5,7 @@ import type {
   PublicReport,
   ReportStatus,
   ReportUrgency,
+  TicketStatus,
 } from '../types';
 
 /**
@@ -33,6 +34,21 @@ export function normalizeCollectionStatus(rawStatus?: string | null): Collection
   if (lower === 'in progress' || lower === 'in_progress') return 'In Progress';
   if (lower === 'completed') return 'Completed';
   return 'Pending';
+}
+
+/**
+ * Normalizes technician work-order statuses to:
+ * 'Open' | 'In Progress' | 'Resolved'
+ */
+export function normalizeTicketStatus(rawStatus?: string | null): TicketStatus {
+  if (!rawStatus) return 'Open';
+  const lower = rawStatus.toLowerCase().trim();
+  if (lower === 'open' || lower === 'new' || lower === 'logged') return 'Open';
+  if (lower === 'in progress' || lower === 'in_progress' || lower === 'acknowledged') {
+    return 'In Progress';
+  }
+  if (lower === 'resolved' || lower === 'closed' || lower === 'complete') return 'Resolved';
+  return 'Open';
 }
 
 /**
