@@ -40,7 +40,7 @@ export function Header({ onLogout, onMenuToggle }: HeaderProps) {
 
   const handleResetDemoData = () => {
     const confirmed = window.confirm(
-      'Reset Demo Data?\n\nThis will restore default seeded bins, reports, and collections for demonstration testing.'
+      'Reset Demo Data?\n\nThis will restore default seeded bins, reports, collections, and maintenance tickets for demonstration testing.'
     );
     if (confirmed) {
       resetAllDemoData();

@@ -28,6 +28,10 @@ export type SensorStatus = 'Online' | 'Warning' | 'Fault' | 'Offline';
 
 export type CollectionPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
+export type TicketStatus = 'Open' | 'In Progress' | 'Resolved';
+
+export type FaultType = 'sensor_error' | 'low_battery' | 'lid_jam' | 'offline';
+
 export interface Bin {
   id: string;
   location: string;
@@ -72,6 +76,18 @@ export interface CollectionRecord {
   priority: CollectionPriority;
   assignedTo: string;
   completedAt?: string;
+}
+
+export interface MaintenanceTicket {
+  id: string;
+  binId: string;
+  location: string;
+  suburb: string;
+  faultType: FaultType;
+  status: TicketStatus;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
 }
 
 export interface User {

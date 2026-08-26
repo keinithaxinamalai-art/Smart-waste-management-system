@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { executeBinCollection } from '../services/dataStore';
+import { executeBinCollection, updateMaintenanceTicketStatus } from '../services/dataStore';
 import {
   calculateCollectionPriority,
   generateReportId,
   getBinStatus,
   normalizeCollectionStatus,
   normalizeReportStatus,
+  normalizeTicketStatus,
   validateWasteReport,
 } from './binUtils';
 
@@ -59,6 +60,15 @@ describe('Report & Collection Status Normalization', () => {
     expect(normalizeCollectionStatus('scheduled')).toBe('Scheduled');
     expect(normalizeCollectionStatus('in progress')).toBe('In Progress');
     expect(normalizeCollectionStatus('completed')).toBe('Completed');
+  });
+
+  it('normalizes technician ticket statuses to Open, In Progress, Resolved', () => {
+    expect(normalizeTicketStatus('new')).toBe('Open');
+    expect(normalizeTicketStatus('open')).toBe('Open');
+    expect(normalizeTicketStatus('acknowledged')).toBe('In Progress');
+    expect(normalizeTicketStatus('in progress')).toBe('In Progress');
+    expect(normalizeTicketStatus('resolved')).toBe('Resolved');
+    expect(normalizeTicketStatus(null)).toBe('Open');
   });
 });
 
@@ -117,6 +127,23 @@ describe('Explicit Report Resolution during Collection Execution', () => {
     if (unlinkedCityReport) {
       expect(unlinkedCityReport.status).toBe('Submitted');
     }
+  });
+});
+
+describe('Technician work-order lifecycle', () => {
+  it('advances an Open ticket to In Progress without changing other tickets', () => {
+    const updated = updateMaintenanceTicketStatus('MT-101', 'In Progress');
+    const started = updated.find((t) => t.id === 'MT-101');
+    const batteryTicket = updated.find((t) => t.id === 'MT-102');
+    expect(started?.status).toBe('In Progress');
+    expect(batteryTicket?.status).toBe('Open');
+  });
+
+  it('resolves an In Progress lid-jam ticket (Open → In Progress → Resolved)', () => {
+    const updated = updateMaintenanceTicketStatus('MT-103', 'Resolved');
+    const lidJam = updated.find((t) => t.id === 'MT-103');
+    expect(lidJam?.faultType).toBe('lid_jam');
+    expect(lidJam?.status).toBe('Resolved');
   });
 });
 
