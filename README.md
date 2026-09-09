@@ -50,7 +50,8 @@ Use a fresh / incognito window if leftover demo data is on the screen. Administr
 ## Assessment documents (1, 2 and 3)
 
 **Assessment 1 — Iteration 1 (Week 6)**  
-[docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) · [docs/DEMO.md](docs/DEMO.md)
+[docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) · [docs/DEMO.md](docs/DEMO.md)  
+Word: [docs/ITERATION-1-REPORT.docx](docs/ITERATION-1-REPORT.docx) · Moodle copy: [Project.docx](Project.docx) · original PDF: [docs/Canberra-SmartWaste-Iteration1-Report.pdf](docs/Canberra-SmartWaste-Iteration1-Report.pdf)
 
 **Assessment 2 — Final delivery (Week 11)**  
 - [Technical report](docs/assessment-2/ASSESSMENT-2-TECHNICAL-REPORT.md) (also Word in that folder)  
