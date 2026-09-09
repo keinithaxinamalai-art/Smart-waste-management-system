@@ -1,160 +1,95 @@
-# Canberra SmartWaste: Smart Waste Management System for Canberra
+# Canberra SmartWaste
 
-[![Quality Controls](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/actions/workflows/ci.yml)
+ICT308 – Project 2 (BIT Capstone), Iteration 1 prototype
 
-> **ICT308 – Project 2 (BIT Capstone Project)**  
-> **Iteration 1 Prototype** · Transport Canberra & City Services (TCCS) Smart Waste Demonstration Build  
-> **Repository:** https://github.com/keinithaxinamalai-art/Smart-waste-management-system
+**Group:** Bijay Pokhrel, Samir Bhandari, Krishna Trivedi, Ayush Ale, Charanpal Kaur
 
-Live prototype (GitHub Pages, after the Pages workflow has published `main`):  
-https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
+Canberra SmartWaste is a software prototype to make it easier to see and manage municipal waste collection in Canberra. Efficiencies can be lost with fixed collection days due to the fact that bins in busy areas might fill at different times, and refuse collection vehicles could be taking out bins that don't need to be emptied. Iteration 1 is the software side only (React 19, TypeScript, Vite). We are not deploying real IoT hardware. Bin data is simulated and saved in the browser with `localStorage`.
 
-Assessment documents in this repository:
-
-- [Iteration 1 technical report](docs/ICT308-Iteration1-Technical-Report.md)
-- [GitHub version-control evidence](docs/GITHUB-EVIDENCE.md)
-- [Contributing / branch workflow](CONTRIBUTING.md)
-
+There are three roles: Citizen, Collection Staff and Administrator.
 
 ---
 
-## 1. Project Overview & Problem Statement
+## Week 6 presentation — how to run it
 
-Urban waste management in Canberra faces challenges due to fixed collection schedules that do not adapt to fluctuating fill levels across high-traffic public areas (such as town centres, light rail interchanges, and parklands). Bins frequently overflow during peak hours, leading to litter, public health concerns, and inefficient fuel usage.
+The URL we want on the projector is:
 
-**Canberra SmartWaste** addresses this challenge through an integrated smart-bin prototype tailored to the Australian Capital Territory (ACT). The system monitors simulated bin fill levels, automatically classifies bin statuses, computes deterministic collection priorities, enables citizen waste reporting, and provides TCCS operations managers and collection staff with suggested pickup sequences.
+**https://keinithaxinamalai-art.github.io/Smart-waste-management-system/**
 
-*Note: All smart-bin telemetry and ACT Government integrations represented in this project are simulated prototype data for Week 6 Iteration 1 demonstration purposes.*
+That site is the built Vite app on the `gh-pages` branch. GitHub Pages is **not turned on yet**, so the link will 404 until someone with repo Settings access does this:
 
----
+1. Open the repository on GitHub
+2. **Settings → Pages**
+3. Build and deployment → Source: **Deploy from a branch**
+4. Branch: **`gh-pages`**, folder: **`/ (root)`**
+5. Save
 
-## 2. Implemented Iteration 1 Features
+After that the URL above should load. Speaking notes: [docs/DEMO.md](docs/DEMO.md).
 
-- **Role-Based Authentication & Prototype Login**:
-  - **Citizen**: Submit waste issue reports, view reference IDs (`WST-2026-XXXX`), and track report status in real time.
-  - **Collection Staff**: View suggested priority collection sequence, inspect bin details, and execute bin pickups (resetting fill levels to 5% and resolving linked reports).
-  - **Administrator**: Operational dashboard, prototype bin telemetry map, critical bins spotlight, collection dispatches, report administration, and demo data reset.
-- **Citizen Waste Reporting**: Form supporting street address input, 8 Canberra suburbs, 6 issue categories, urgency selection, optional photo attachment toggle, validation against empty/whitespace inputs, and unique reference ID generation (`WST-2026-XXXX`).
-- **Simulated Smart-Bin Monitoring**: Fill percentages, priority badges, and sensor status (`Online`, `Warning`, `Fault`, `Offline`).
-- **Deterministic Collection Priority Algorithm**: Formula-based priority scoring (`Critical`, `High`, `Medium`, `Low`).
-- **Interactive Collection Management**: Staff and Admins can mark bins as collected, immediately updating bin fill levels to 5% (Normal), resolving associated reports, updating alerts, and refreshing live dashboard metrics.
-- **Smart Bin Diagnostics**: Maintenance view tracks simulated sensor errors, low-battery alerts, lid mechanism jams, and offline modules. Technician work orders move **Open → In Progress → Resolved** and persist in `localStorage`.
-- **Demo Data Reset**: Administrator header feature allowing instant restoration of default seeded demo data during presentations.
-- **Data Persistence**: Reactive client-side store backed by `localStorage` with safe schema migration helpers.
-- **Automated Unit Testing**: Test suite verifying business logic algorithms using `vitest`.
-- **GitHub Quality Controls**: GitHub Actions runs ESLint, Vitest, and the production build on every pull request.
+If Pages is still not working in class, run it on the laptop (no extra tools besides Node):
 
----
-
-## 3. Technology Stack & System Architecture
-
-- **Frontend Core**: React 19, TypeScript 6.0, Vite 8
-- **Styling**: Modular Vanilla CSS with CSS Custom Properties
-- **Icons & Data Visualization**: Lucide React, Recharts
-- **Testing Infrastructure**: Vitest (Automated Unit Testing), ESLint 10
-- **Persistence Layer**: Centralized `localStorage` service (`src/services/dataStore.ts`)
-
-```
-src/
-├── assets/         # Static visual assets
-├── components/     # Header, Sidebar, BinTable, StatCard, MapPanel, AlertsList, Charts
-├── constants/      # ISSUE_LABELS, FAULT_LABELS
-├── context/        # React context (AppProvider, AppContextObject)
-├── hooks/          # Custom hooks (useApp)
-├── lib/            # Routing helpers
-├── services/       # Centralized persistence layer (dataStore.ts)
-├── types/          # Domain TypeScript interfaces (index.ts)
-├── utils/          # Pure business logic algorithms & unit tests (binUtils.ts, binUtils.test.ts)
-└── views/          # Page components (DashboardView, LoginView, PublicReportView, DriverView, MaintenanceView, etc.)
-```
-
----
-
-## 4. Reusable Smart Waste Business Algorithms
-
-### A. Smart Bin Fill-Level Status Classification
-Implemented in `src/utils/binUtils.ts` via `getBinStatus(fillLevel: unknown)`:
-
-| Fill Level Range | Status Classification | Action Required |
-|---|---|---|
-| **0% – 49%** | `Normal` | Standard monitoring |
-| **50% – 79%** | `Moderate` | Monitor fill velocity |
-| **80% – 89%** | `Collection Required` | Schedule for upcoming route |
-| **90% – 100%** | `Critical` | Immediate pickup required |
-
-*Invalid or out-of-range sensor readings (<0, >100, NaN, null, undefined) are safely clamped to 0–100%.*
-
-### B. Deterministic Collection Priority Formula
-Implemented in `src/utils/binUtils.ts` via `calculateCollectionPriority()`:
-
-$$\text{Priority Score} = \text{Fill Contribution} + \text{Urgency Contribution} + \text{Overdue Contribution}$$
-
-- **Fill Contribution**: $\text{FillLevel} \times 0.5$ (max 50 points)
-- **Urgency Contribution**: `Critical` (30 pts), `High` (20 pts), `Medium` (10 pts), `Low` (0 pts)
-- **Overdue Contribution**: $\min(\text{HoursOverdue} \times 0.8, 20\text{ points})$
-
-#### Priority Thresholds:
-- **Score $\ge 80$**: `Critical`
-- **Score $60 - 79$**: `High`
-- **Score $40 - 59$**: `Medium`
-- **Score $< 40$**: `Low`
-
----
-
-## 5. Fictional Prototype Credentials
-
-For demonstration and grading evaluation, use the pre-configured prototype accounts:
-
-| Role | Prototype Email | Demo Password | Scope & Responsibilities |
-|---|---|---|---|
-| **Administrator** | `admin@smartwaste.demo` | `DemoAdmin123!` | Manager Dashboard, Critical Bins Spotlight, Report Administration, Demo Data Reset |
-| **Collection Staff** | `staff@smartwaste.demo` | `DemoStaff123!` | Priority Collection Sequence, Pickup Execution ("Mark Collected") |
-| **Citizen** | `citizen@smartwaste.demo` | `DemoCitizen123!` | Public Waste Reporting, Ref ID Generation (`WST-2026-XXXX`), Report History |
-
----
-
-## 6. Installation & Local Development
-
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm (v9 or higher recommended)
-
-### Quick Start Commands
 ```bash
-# 1. Install dependencies
 npm install
+npm run demo
+```
 
-# 2. Run local development server
-npm run dev
+Then open http://localhost:5173/
 
-# 3. Run automated unit test suite
+### Demo logins
+
+| Role | Email | Password |
+|---|---|---|
+| Administrator | `admin@smartwaste.demo` | `DemoAdmin123!` |
+| Collection Staff | `staff@smartwaste.demo` | `DemoStaff123!` |
+| Citizen | `citizen@smartwaste.demo` | `DemoCitizen123!` |
+
+Use a fresh / incognito window if leftover demo data is on the screen. Administrator can click **Reset Demo Data**.
+
+---
+
+## Assessment documents
+
+- Group report: [docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) (Word: [docs/ITERATION-1-REPORT.docx](docs/ITERATION-1-REPORT.docx), Moodle copy: [Project.docx](Project.docx), original PDF: [docs/Canberra-SmartWaste-Iteration1-Report.pdf](docs/Canberra-SmartWaste-Iteration1-Report.pdf))
+- Demo script: [docs/DEMO.md](docs/DEMO.md)
+- GitHub evidence: [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md)
+- Branch workflow: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+## What is working in Iteration 1
+
+- Login starts with no session. Fake test accounts for the three roles.
+- Citizen report form (Canberra suburbs, validation, `WST-2026-XXXX` reference). Status goes Submitted → Under Review → Scheduled → Resolved.
+- Smart bin fill status from `getBinStatus()`: 0–49% Normal, 50–79% Moderate, 80–89% Collection Required, 90–100% Critical.
+- Collection priority is a rule based score (fill + urgency + overdue time). Not a black box A.I. approach.
+- Collection sequence only includes Collection Required and Critical bins. **Mark Collected** resets fill to 5%. Only reports linked to that `binId` get resolved.
+- Admin dashboard, map, alerts and search all use the same live state.
+- Maintenance view with simulated sensor faults. **Acknowledge Ticket** then **Mark Resolved**.
+- Vitest tests, ESLint, and GitHub Actions (`ci.yml`) for lint / test / build.
+
+---
+
+## How to run it locally (development)
+
+Needs Node.js 18+ and npm.
+
+```bash
+npm install
+npm run demo          # http://localhost:5173/
 npm test
-
-# 4. Run linter
 npm run lint
-
-# 5. Build production bundle
 npm run build
 ```
 
+`npm run dev` is the same server as `npm run demo`.
+
 ---
 
-## 7. Team Responsibilities & Git Branch Workflow
+## Team branches
 
-Active development for Iteration 1 was executed across five dedicated feature branches. Each member branch contains commits attributed to their specific Git identity:
-
-| Team Member | GitHub Handle | Git Author Name & Email | Feature Branch | Core Responsibilities |
-|---|---|---|---|---|
-| **Bijay Pokhrel** | `bijay123pokhrel` | `Bijay Pokhrel` <`Cihe240246@student.cihe.edu.au`> | `bijay-admin-dashboard` | Administrator Dashboard, Critical Bin Spotlight, Role Labels & Route Protection |
-| **Samir Bhandari** | `Samir0888` | `Samir Bhandari` <`sabhandarisamir2021@gmail.com`> | `samir-citizen-interface` | Citizen Reporting Interface, Form Validation, ACT Suburbs & Status Normalization |
-| **Krishna Trivedi** | `KrishnaTriv` | `Krishna Trivedi` <`krishnatrivedi0507@gmail.com`> | `krishna-database-collection` | Typed Data Models, Local Persistence Service (`dataStore.ts`), Bin Status & Priority Algorithms |
-| **Ayush Ale** | `keinithaxinamalai-art` | `Ayush Ale` <`keinithaxinamalai@gmail.com`> | `ayush-auth-testing` | Unauthenticated Session Flow, Prototype Login, AppContext State Integration & Unit Tests |
-| **Charanpal Kaur** | `charanpal06-coder` | `Charanpal Kaur` <`charanpalkaur1512@gmail.com`> | `charanpal-maintenance-analytics` | Smart Bin Diagnostics, Sensor Health Monitoring & Technician Dispatches |
-
-### Branch Structure
 ```text
-main (stable release)
-└── develop (integration branch)
+main (stable)
+└── develop
     ├── bijay-admin-dashboard
     ├── samir-citizen-interface
     ├── krishna-database-collection
@@ -162,31 +97,25 @@ main (stable release)
     └── charanpal-maintenance-analytics
 ```
 
-Merged module pull requests: [#1](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/1) Ayush, [#2](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/2) Bijay, [#3](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/3) Samir, [#4](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/4) Krishna, [#5](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/5) develop integration. See [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md) for the full version-control record.
-
-New work should follow [CONTRIBUTING.md](CONTRIBUTING.md): branch from `develop`, open a PR with the module checklist, and wait for GitHub Actions (lint, test, build) to pass.
-
----
-
-## 8. Recommended Demonstration Flow (Manual Test Stages A–I)
-
-1. **A – Unauthenticated Start**: Open fresh app. Verify Login screen appears. Verify Admin dashboard is blocked.
-2. **B – Citizen Flow**: Login as `citizen@smartwaste.demo`. Attempt empty submission to test validation. Submit valid report in *Canberra City*. Note reference ID (`WST-2026-XXXX`). View in **Track Reports History**.
-3. **C – Administrator Review**: Logout, login as `admin@smartwaste.demo`. Open Public Reports administration. Change report status to `Under Review` then `Scheduled`.
-4. **D – Citizen Status Synchronization**: Log back in as `citizen@smartwaste.demo`. Verify report status updated to `Scheduled`.
-5. **E – Smart Bin Telemetry**: Open Bin Map and telemetry table. Verify bins exist across all 4 states (`Normal`, `Moderate`, `Collection Required`, `Critical`).
-6. **F – Map Data Consistency**: Note critical bin `WDN-104` (92% fill). Verify map pin and dashboard display identical values.
-7. **G – Collection Pickup Execution**: Log in as `staff@smartwaste.demo`. Open collection queue. Click **Mark Collected** for `WDN-104`. Verify fill resets to 5%, status becomes Normal, and last collected date updates.
-8. **H – Cross-Screen Consistency**: Verify `WDN-104` updated to 5% across Map, Bin Table, Alerts, and Dashboard statistics.
-9. **I – Demo Reset**: Log in as Admin. Click **Reset Demo Data** in header to restore default presentation state.
-10. **J – Maintenance lifecycle**: Open Maintenance. Confirm seeded work orders for sensor error, low battery, lid jam, and offline. Click **Start Work** on an Open ticket (status becomes In Progress), then **Mark Resolved** on the lid-jam ticket.
-
----
-
-## 9. Quality Controls
-
-| Check | Command | Automation |
+| Member | Branch | What they worked on |
 |---|---|---|
-| Unit tests (fill-level tiers, clamping, priority, report IDs, collection↔report integrity, ticket lifecycle) | `npm test` | GitHub Actions `ci.yml` |
-| ESLint | `npm run lint` | GitHub Actions `ci.yml` |
-| Production build | `npm run build` | GitHub Actions `ci.yml` + Pages deploy |
+| Bijay Pokhrel | `bijay-admin-dashboard` | Admin dashboard, project coordination |
+| Samir Bhandari | `samir-citizen-interface` | Citizen reporting and validation |
+| Krishna Trivedi | `krishna-database-collection` | Data models, `localStorage`, bin/priority algorithms |
+| Ayush Ale | `ayush-auth-testing` | Login, AppContext, tests |
+| Charanpal Kaur | `charanpal-maintenance-analytics` | Sensor diagnostics and maintenance tickets |
+
+Merged PRs: [#1](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/1) Ayush, [#2](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/2) Bijay, [#3](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/3) Samir, [#4](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/4) Krishna, [#5](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/5) develop → main. More detail in [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md).
+
+Day to day chat was in Google Chat. GitHub is where the actual code history is.
+
+---
+
+## Short demo path (if you are marking it)
+
+1. Open the app logged out. Login screen should show.
+2. Citizen: submit a Canberra City overflow report, copy the `WST-2026-XXXX` id, see **Submitted**.
+3. Admin: Public Reports → Under Review then Scheduled. Check dashboard / map. `WDN-104` is around 92% (Critical).
+4. Staff: **Mark Collected** on `WDN-104`. Fill goes to 5% (Normal) on map, table and alerts.
+5. Maintenance: **Acknowledge Ticket** on an Open ticket.
+6. Admin: **Reset Demo Data**.

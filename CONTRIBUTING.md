@@ -1,12 +1,10 @@
-# Contributing to Canberra SmartWaste
+# Contributing
 
-ICT308 – Project 2 (BIT Capstone). This repository uses a **feature-branch workflow** that maps one-to-one with the Iteration 1 modules in the progress presentation.
-
-## Branch structure
+ICT308 Project 2. We use feature branches so each person's module stays easy to find.
 
 ```text
-main          # stable Iteration 1 demonstration build (protected release line)
-└── develop   # integration branch
+main          # stable demo build
+└── develop   # integration
     ├── bijay-admin-dashboard
     ├── ayush-auth-testing
     ├── samir-citizen-interface
@@ -14,21 +12,21 @@ main          # stable Iteration 1 demonstration build (protected release line)
     └── charanpal-maintenance-analytics
 ```
 
-| Module / domain | Feature branch | Owner |
+| Area | Branch | Owner |
 |---|---|---|
-| Admin Management | `bijay-admin-dashboard` | Bijay Pokhrel |
-| Session & Testing | `ayush-auth-testing` | Ayush Ale |
-| Citizen Reporting | `samir-citizen-interface` | Samir Bhandari |
-| Data Persistence | `krishna-database-collection` | Krishna Trivedi |
-| Operations & Maintenance | `charanpal-maintenance-analytics` | Charanpal Kaur |
+| Admin dashboard | `bijay-admin-dashboard` | Bijay Pokhrel |
+| Login and tests | `ayush-auth-testing` | Ayush Ale |
+| Citizen reporting | `samir-citizen-interface` | Samir Bhandari |
+| Data / algorithms | `krishna-database-collection` | Krishna Trivedi |
+| Maintenance | `charanpal-maintenance-analytics` | Charanpal Kaur |
 
 ## Workflow
 
-1. Branch from `develop` using the module branch name above (or a short task suffix, e.g. `ayush-auth-testing-login-error`).
-2. Commit with conventional messages (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`).
-3. Open a pull request into `develop` using the PR template. Link the Jira story.
-4. CI must pass: `npm run lint`, `npm test`, `npm run build`.
-5. After review, merge to `develop`. Release integrations are merged `develop` → `main`.
+1. Branch from `develop` (use the module name, or add a short suffix if needed).
+2. Write a normal commit message that says what changed.
+3. Open a pull request into `develop`. Put the Jira key in the PR if there is one.
+4. Wait for GitHub Actions: `npm run lint`, `npm test`, `npm run build`.
+5. Merge to `develop`, then `develop` → `main` when we freeze a demo build.
 
 ## Local checks
 
@@ -37,11 +35,9 @@ npm install
 npm run lint
 npm test
 npm run build
-npm run dev
+npm run demo
 ```
 
-Use the fictional prototype accounts in the README. Do not commit secrets.
+Demo accounts are in the README. Don't commit passwords or secrets.
 
-## Demo data
-
-Administrator **Reset Demo Data** restores seeded bins, reports, collections, and maintenance tickets so classroom demonstrations are repeatable.
+Administrator **Reset Demo Data** puts the bins, reports, collections and maintenance tickets back to the seed set so the class demo can be repeated.

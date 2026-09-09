@@ -1,13 +1,15 @@
-# GitHub Version Control Evidence — Iteration 1
+# GitHub version control evidence — Iteration 1
 
 Repository: [keinithaxinamalai-art/Smart-waste-management-system](https://github.com/keinithaxinamalai-art/Smart-waste-management-system)
 
-This note supports Assessment 1 Section 4 (GitHub Repository) and presentation slide 6 (GitHub Branching & Modular Deliverables).
+Live demonstration: https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
 
-## Branching strategy
+This note is for Assessment 1 Section 4 (GitHub Repository) and section 4 of the group report.
+
+## Branching
 
 ```text
-main (stable Iteration 1 release)
+main (stable Iteration 1)
 └── develop (integration)
     ├── bijay-admin-dashboard
     ├── ayush-auth-testing
@@ -16,11 +18,11 @@ main (stable Iteration 1 release)
     └── charanpal-maintenance-analytics
 ```
 
-Work is integrated through pull requests. Feature branches stay on the remote so the teaching team can inspect module-level commit history.
+Work goes in through pull requests. Feature branches are left on the remote so the teaching team can look at each module's commit history.
 
 ## Merged pull requests
 
-| PR | Title | Head branch | Evidence |
+| PR | Title | Head branch | What it covers |
 |---|---|---|---|
 | [#1](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/1) | Ayush auth testing | `ayush-auth-testing` | Session flow, prototype login, AppContext |
 | [#2](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/2) | Bijay admin dashboard | `bijay-admin-dashboard` | Admin dashboard, critical bins, collection execution |
@@ -28,21 +30,21 @@ Work is integrated through pull requests. Feature branches stay on the remote so
 | [#4](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/4) | Krishna database collection | `krishna-database-collection` | Types, `dataStore.ts`, priority algorithms, Vitest |
 | [#5](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/5) | Develop | `develop` | Integration of module branches into the release line |
 
-Charanpal Kaur’s diagnostics and technician-dispatch commits were merged on `charanpal-maintenance-analytics` and integrated to `main` (see commits `3e6a320`, `5b8bc63`, `2c3d511`). Subsequent maintenance lifecycle work is tracked in later PRs.
+Charanpal Kaur's diagnostics and technician-dispatch commits were merged on `charanpal-maintenance-analytics` and integrated to `main` (see commits `3e6a320`, `5b8bc63`, `2c3d511`). Later maintenance lifecycle work is in later PRs.
 
 ## Team contributions
 
-Commit authors on `main` use each member’s Git identity (name + student/personal email) as listed in the README roster. Typical contribution split:
+Commit authors on `main` use each member's Git name and email as listed in the README.
 
-| Member | Feature branch | Representative commits |
+| Member | Feature branch | Typical work |
 |---|---|---|
-| Bijay Pokhrel | `bijay-admin-dashboard` | Admin dashboard, role protection, demo reset, release freezes |
+| Bijay Pokhrel | `bijay-admin-dashboard` | Admin dashboard, role protection, demo reset |
 | Ayush Ale | `ayush-auth-testing` | Unauthenticated start, demo credentials, AppContext, login validation |
 | Samir Bhandari | `samir-citizen-interface` | Report form, `WST-2026-XXXX` IDs, status model, collection sequence UI |
 | Krishna Trivedi | `krishna-database-collection` | Domain types, localStorage store, `getBinStatus`, priority scoring, unit tests |
 | Charanpal Kaur | `charanpal-maintenance-analytics` | Sensor diagnostics, technician tickets, waste composition charts |
 
-## Quality controls (CI)
+## Checks that run on GitHub
 
 GitHub Actions workflow [Quality Controls](../.github/workflows/ci.yml) runs on every push and pull request:
 
@@ -51,11 +53,11 @@ GitHub Actions workflow [Quality Controls](../.github/workflows/ci.yml) runs on 
 3. `npm test` (Vitest)
 4. `npm run build` (TypeScript + Vite production bundle)
 
-A second workflow publishes the Vite build to GitHub Pages from `main` so the prototype can be demonstrated without a local install.
+There is also a Pages workflow that publishes the Vite build. The live demo still needs Pages switched on once: Settings → Pages → deploy from branch `gh-pages`, folder `/ (root)`.
 
-## Professional GitHub practices added for Iteration 1
+## Other repo files for marking
 
-- Pull request template mapped to the five presentation modules
-- Issue templates for user stories and bugs (with Jira key field)
-- `CONTRIBUTING.md` describing the branch workflow
-- Repeatable demo data reset for classroom marking
+- Pull request template mapped to the five modules
+- Issue templates for stories and bugs (with a Jira key field)
+- `CONTRIBUTING.md` for the branch workflow
+- Reset Demo Data so the classroom demo can be repeated

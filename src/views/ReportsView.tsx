@@ -60,7 +60,7 @@ export function ReportsView() {
           <h2>Network Waste Composition</h2>
         </div>
         <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-          <CompositionChart />
+          <CompositionChart data={dynamicComposition} />
           <ul className="composition-legend">
             {dynamicComposition.map((item) => (
               <li key={item.name}>
