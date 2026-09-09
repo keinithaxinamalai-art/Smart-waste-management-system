@@ -47,12 +47,21 @@ Use a fresh / incognito window if leftover demo data is on the screen. Administr
 
 ---
 
-## Assessment documents
+## Assessment documents (1, 2 and 3)
 
-- Group report: [docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) (Word: [docs/ITERATION-1-REPORT.docx](docs/ITERATION-1-REPORT.docx), Moodle copy: [Project.docx](Project.docx), original PDF: [docs/Canberra-SmartWaste-Iteration1-Report.pdf](docs/Canberra-SmartWaste-Iteration1-Report.pdf))
-- Demo script: [docs/DEMO.md](docs/DEMO.md)
-- GitHub evidence: [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md)
-- Branch workflow: [CONTRIBUTING.md](CONTRIBUTING.md)
+**Assessment 1 — Iteration 1 (Week 6)**  
+[docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) · [docs/DEMO.md](docs/DEMO.md)
+
+**Assessment 2 — Final delivery (Week 11)**  
+- [Technical report](docs/assessment-2/ASSESSMENT-2-TECHNICAL-REPORT.md) (also Word in that folder)  
+- [User guide](docs/assessment-2/USER-GUIDE.md)  
+- [UAT checklist](docs/assessment-2/UAT-CHECKLIST.md)  
+- [Week 11 demo script](docs/assessment-2/WEEK-11-DEMO.md)
+
+**Assessment 3 — Poster + reflection (Week 12)**  
+[docs/assessment-3/README.md](docs/assessment-3/README.md) — A3 poster HTML/QR and five individual reflection drafts.
+
+Also: [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
