@@ -1,56 +1,28 @@
-import { MapPin } from 'lucide-react';
+import { CanberraMap } from './CanberraMap';
 import { useApp } from '../hooks/useApp';
-import { getBinStatus } from '../utils/binUtils';
+import { getBinStatus, getRequiredCollectionSequence } from '../utils/binUtils';
 
-export function MapPanel() {
+interface MapPanelProps {
+  height?: number;
+  showRoute?: boolean;
+}
+
+export function MapPanel({ height = 360, showRoute = false }: MapPanelProps) {
   const { bins } = useApp();
+  const routeStops = showRoute ? getRequiredCollectionSequence(bins) : [];
 
   const criticalCount = bins.filter((b) => getBinStatus(b.fillLevel) === 'Critical').length;
   const collectionReqCount = bins.filter((b) => getBinStatus(b.fillLevel) === 'Collection Required').length;
-  const moderateCount = bins.filter((b) => getBinStatus(b.fillLevel) === 'Moderate').length;
-  const normalCount = bins.filter((b) => getBinStatus(b.fillLevel) === 'Normal').length;
 
   return (
-    <div className="map-panel">
-      <div className="map-grid" aria-hidden>
-        {bins.map((bin, i) => {
-          const status = getBinStatus(bin.fillLevel);
-          const isCritical = status === 'Critical';
-          const isCollectionReq = status === 'Collection Required';
-          const isModerate = status === 'Moderate';
-
-          let dotClass = 'map-dot--normal';
-          if (isCritical) dotClass = 'map-dot--critical';
-          else if (isCollectionReq || isModerate) dotClass = 'map-dot--warning';
-
-          return (
-            <span
-              key={bin.id}
-              className={`map-dot ${dotClass}`}
-              style={{
-                left: `${12 + (i * 19) % 74}%`,
-                top: `${18 + (i * 25) % 62}%`,
-              }}
-              title={`${bin.id} — ${bin.location} (${bin.suburb}): ${bin.fillLevel}% fill (${status})`}
-            />
-          );
-        })}
-      </div>
-
-      <div className="map-overlay">
-        <MapPin size={20} />
-        <span>Canberra ACT — Prototype Smart-Bin Telemetry Map</span>
-        <p className="map-hint">
-          {criticalCount} Critical (90–100%), {collectionReqCount} Collection Required (80–89%), {moderateCount} Moderate (50–79%), {normalCount} Normal (0–49%)
-        </p>
-      </div>
-
-      <div className="map-legend">
-        <span><i className="legend-dot legend-dot--critical" /> Critical (90–100%)</span>
-        <span><i className="legend-dot legend-dot--warning" /> Collection Required (80–89%)</span>
-        <span><i className="legend-dot legend-dot--warning" style={{ opacity: 0.7 }} /> Moderate (50–79%)</span>
-        <span><i className="legend-dot legend-dot--normal" /> Normal (0–49%)</span>
-      </div>
+    <div>
+      <CanberraMap bins={bins} routeStops={routeStops} height={height} showDepot />
+      <p className="map-hint" style={{ marginTop: '0.75rem' }}>
+        Live OpenStreetMap of Canberra. Pins use the seeded ACT coordinates.
+        {showRoute
+          ? ' The teal line is the OSRM road path (depot → priority stops → depot). Stop order is still the ≥80% priority score, not AI.'
+          : ` ${criticalCount} critical and ${collectionReqCount} collection-required bins. Open Route Planning to draw the truck path.`}
+      </p>
     </div>
   );
 }

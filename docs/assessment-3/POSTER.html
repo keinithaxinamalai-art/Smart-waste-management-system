@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Canberra SmartWaste — A3 Academic Poster</title>
+  <style>
+    @page { size: A3 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      font-family: Calibri, "Segoe UI", Arial, sans-serif;
+      color: #10231d;
+      background: #e8f2ee;
+    }
+    .poster {
+      width: 400mm;
+      min-height: 277mm;
+      margin: 0 auto;
+      padding: 14mm 16mm;
+      background:
+        linear-gradient(180deg, #0d5c4b 0 28mm, #f4faf7 28mm);
+      color: #10231d;
+    }
+    header {
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 10mm;
+    }
+    header h1 { margin: 0; font-size: 28pt; letter-spacing: -0.03em; }
+    header p { margin: 4px 0 0; font-size: 12pt; opacity: 0.95; }
+    .meta { font-size: 10pt; text-align: right; max-width: 140mm; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.2fr 1fr 0.85fr;
+      gap: 8mm;
+    }
+    section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 6mm 6.5mm;
+      box-shadow: 0 1px 0 rgba(13, 92, 75, 0.12);
+      border-top: 5px solid #0d5c4b;
+    }
+    h2 {
+      margin: 0 0 3mm;
+      font-size: 13pt;
+      color: #0d5c4b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    p, li { font-size: 10.5pt; line-height: 1.35; margin: 0 0 2.5mm; }
+    ul { margin: 0; padding-left: 4.5mm; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th, td { border: 1px solid #cde3dc; padding: 2mm 2.5mm; text-align: left; }
+    th { background: #e6f4ef; color: #0d5c4b; }
+    .qr { text-align: center; }
+    .qr img { width: 38mm; height: 38mm; }
+    .foot {
+      margin-top: 6mm;
+      font-size: 9pt;
+      color: #35564c;
+    }
+    @media print {
+      body { background: #fff; }
+      .poster { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <header>
+      <div>
+        <h1>Canberra SmartWaste</h1>
+        <p>A smart waste monitoring and citizen reporting prototype for the ACT</p>
+        <p>ICT308 Project 2 · BIT · Semester 2, 2026 · Iteration 1 completed system</p>
+      </div>
+      <div class="meta">
+        Bijay Pokhrel · Samir Bhandari · Krishna Trivedi<br />
+        Ayush Ale · Charanpal Kaur<br />
+        Simulated TCCS / Canberra pilot — not live IoT hardware
+      </div>
+    </header>
+
+    <div class="grid">
+      <section>
+        <h2>Problem</h2>
+        <p>Fixed collection days send trucks to empty bins and still leave busy public bins overflowing. Fuel is wasted and streets get dirty.</p>
+        <h2>Solution</h2>
+        <p>A role-based software prototype. Simulated Canberra bin fill data, a rule-based pickup score, and a citizen report form with <strong>WST-2026-XXXX</strong> tracking. No black-box A.I. routing.</p>
+      </section>
+
+      <section>
+        <h2>System overview</h2>
+        <p><strong>Citizen</strong> — report overflow / damage, track status (Submitted → Under Review → Scheduled → Resolved).</p>
+        <p><strong>Collection staff</strong> — only bins ≥80% full are on the run. Empty bins are skipped. Mark Collected resets fill to 5%.</p>
+        <p><strong>Administrator</strong> — dashboard, map, alerts, assign Route ACT-R104, maintenance tickets, reset demo data.</p>
+        <p>One shared state (AppContext). Persistence is browser <code>localStorage</code> in <code>dataStore.ts</code> — there is no cloud SQL database in this delivery.</p>
+      </section>
+
+      <section>
+        <h2>Implementation highlights</h2>
+        <table>
+          <tr><th>Fill</th><th>Status</th></tr>
+          <tr><td>0–49%</td><td>Normal — skip truck</td></tr>
+          <tr><td>50–79%</td><td>Moderate — skip truck</td></tr>
+          <tr><td>80–89%</td><td>Collection required</td></tr>
+          <tr><td>90–100%</td><td>Critical — go first if score is highest</td></tr>
+        </table>
+        <p style="margin-top:3mm">Priority score = fill×0.5 + urgency + overdue time. Collection closes only reports with the same bin ID.</p>
+      </section>
+
+      <section class="qr">
+        <h2>GitHub / demo</h2>
+        <img src="github-qr.png" alt="QR code to GitHub repository" />
+        <p>github.com/keinithaxinamalai-art/Smart-waste-management-system</p>
+        <p><strong>Laptop demo:</strong> npm install && npm run demo → http://localhost:5173/</p>
+        <p>admin / staff / citizen @smartwaste.demo</p>
+      </section>
+
+      <section>
+        <h2>Key technologies</h2>
+        <ul>
+          <li>React 19, TypeScript 6, Vite 8</li>
+          <li>AppContext + localStorage</li>
+          <li>Vitest, ESLint, GitHub Actions</li>
+          <li>Lucide + Recharts</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Results</h2>
+        <ul>
+          <li>Three working roles and end-to-end report → collect story</li>
+          <li>22 automated tests on the business rules</li>
+          <li>Feature branches and PRs per team member</li>
+          <li>Honest scope: simulated telemetry, not IoT</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Future work</h2>
+        <ul>
+          <li>Live bin sensors / API</li>
+          <li>Shared database and real login</li>
+          <li>Geospatial shortest-path routing</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Ask us</h2>
+        <p>How does the driver skip empty bins? Why localStorage? Where is the database? We can walk the demo on a laptop in two minutes.</p>
+      </section>
+    </div>
+
+    <p class="foot">ICT308 Assessment 3 Part A — A3 academic poster. Print landscape. APA sources in the Assessment 2 report (Sosunova &amp; Porras, 2022; An et al., 2022; Kuang &amp; Lin, 2021).</p>
+  </div>
+</body>
+</html>

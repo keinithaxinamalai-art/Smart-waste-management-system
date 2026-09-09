@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { CheckCircle2, Route, Truck } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CheckCircle2, MapPinned, Route, Truck } from 'lucide-react';
+import { CanberraMap } from '../components/CanberraMap';
+import { useDrivingRouteSummary } from '../hooks/useDrivingRoute';
 import { useApp } from '../hooks/useApp';
-import { getBinStatus } from '../utils/binUtils';
+import { formatDistanceKm, formatDurationMin } from '../lib/canberraGeo';
+import { getBinStatus, getRequiredCollectionSequence } from '../utils/binUtils';
 import './RoutesView.css';
 
 export function RoutesView() {
@@ -9,13 +12,8 @@ export function RoutesView() {
   const [assigned, setAssigned] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Required collection sequence strictly uses fillLevel >= 80 (Collection Required & Critical)
-  const sequence = [...bins]
-    .filter((b) => {
-      const status = getBinStatus(b.fillLevel);
-      return status === 'Critical' || status === 'Collection Required';
-    })
-    .sort((a, b) => b.priorityScore - a.priorityScore);
+  const sequence = useMemo(() => getRequiredCollectionSequence(bins), [bins]);
+  const driving = useDrivingRouteSummary(sequence);
 
   const handleAssignDriver = () => {
     assignRoute('Route Driver 1 (ACT-TRK-04)');
@@ -28,28 +26,34 @@ export function RoutesView() {
     <>
       <div className="page-header">
         <h1>Suggested Collection Sequence</h1>
-        <p>Demonstration collection order based on current smart-bin collection priorities (≥80% fill)</p>
+        <p>
+          Bins at 80% or more, ordered by priority score. The map traces that order on Canberra
+          roads using OSRM (Open Source Routing Machine).
+        </p>
       </div>
 
       {toast && (
-        <div
-          style={{
-            background: '#d1fae5',
-            color: '#065f46',
-            border: '1px solid #a7f3d0',
-            borderRadius: '8px',
-            padding: '0.875rem 1.25rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontWeight: 600,
-          }}
-        >
+        <div className="route-toast">
           <CheckCircle2 size={20} />
           {toast}
         </div>
       )}
+
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <div className="card-header">
+          <h2>Live route map — Hume depot to priority stops</h2>
+          <span className="badge badge-normal">
+            {driving?.source === 'osrm' ? 'OSRM road path' : driving ? 'Straight-line fallback' : 'Loading path…'}
+          </span>
+        </div>
+        <div className="card-body" style={{ paddingTop: 0 }}>
+          <CanberraMap bins={bins} routeStops={sequence} height={460} showDepot />
+          <p className="route-note" style={{ marginTop: '0.85rem' }}>
+            Teal line = streets from OSRM. Pins that are faded are under 80% and are not on the
+            truck run. This is not GPS tracking and not AI routing.
+          </p>
+        </div>
+      </div>
 
       <div className="dashboard-grid">
         <div className="card">
@@ -74,6 +78,13 @@ export function RoutesView() {
           </div>
           <div className="card-body">
             <ol className="route-list">
+              <li className="route-stop">
+                <span className="route-order route-order--depot">D</span>
+                <div className="route-stop-body">
+                  <strong>Hume Collection Depot</strong>
+                  <span>Start of run</span>
+                </div>
+              </li>
               {sequence.map((stop, idx) => (
                 <li key={stop.id} className="route-stop">
                   <span className="route-order">{idx + 1}</span>
@@ -83,15 +94,20 @@ export function RoutesView() {
                   </div>
                   <span
                     className={`route-fill ${
-                      stop.fillLevel >= 90
-                        ? 'route-fill--high'
-                        : 'route-fill--warn'
+                      stop.fillLevel >= 90 ? 'route-fill--high' : 'route-fill--warn'
                     }`}
                   >
                     {stop.fillLevel}% ({getBinStatus(stop.fillLevel)})
                   </span>
                 </li>
               ))}
+              <li className="route-stop">
+                <span className="route-order route-order--depot">D</span>
+                <div className="route-stop-body">
+                  <strong>Return to Hume Depot</strong>
+                  <span>End of run</span>
+                </div>
+              </li>
             </ol>
           </div>
         </div>
@@ -104,17 +120,35 @@ export function RoutesView() {
             <div className="route-summary-stat">
               <Route size={24} />
               <div>
-                <span className="route-summary-value">{sequence.length} Required Stops</span>
-                <span className="route-summary-label">Estimated route duration: ~1h 45m</span>
+                <span className="route-summary-value">{sequence.length} required stops</span>
+                <span className="route-summary-label">Only Collection Required and Critical bins</span>
               </div>
             </div>
             <div className="route-summary-stat">
-              <span className="route-summary-value">Priority Based</span>
-              <span className="route-summary-label">Sequence ordered by fill level & urgency score</span>
+              <MapPinned size={24} />
+              <div>
+                <span className="route-summary-value">
+                  {driving ? formatDistanceKm(driving.distanceKm) : '…'}
+                </span>
+                <span className="route-summary-label">
+                  {driving
+                    ? `${formatDurationMin(driving.durationMin)} driving${
+                        driving.source === 'osrm' ? ' (OSRM + stop time)' : ' (estimate)'
+                      }`
+                    : 'Asking OSRM for road distance'}
+                </span>
+              </div>
+            </div>
+            <div className="route-summary-stat">
+              <span className="route-summary-value">Priority then roads</span>
+              <span className="route-summary-label">
+                Which bins: fill ≥ 80% and score. Which streets: OSRM.
+              </span>
             </div>
             {sequence.length > 0 && (
               <p className="route-note">
-                Current order: {sequence.slice(0, 4).map((s) => `${s.id} (${s.fillLevel}%)`).join(' → ')}
+                Current order: Depot → {sequence.map((s) => `${s.id} (${s.fillLevel}%)`).join(' → ')}{' '}
+                → Depot
               </p>
             )}
           </div>
