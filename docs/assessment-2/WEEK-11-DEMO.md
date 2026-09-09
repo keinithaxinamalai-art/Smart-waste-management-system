@@ -12,6 +12,6 @@ Run `npm run demo` and open http://localhost:5173/ on the presentation laptop (i
 | 6–8 | Krishna | Why empty bins are skipped; priority score; assign route; Mark Collected |
 | 8–10 | Charanpal | After-collect sync, maintenance acknowledge, reset, what is *not* IoT |
 
-**Say out loud if asked:** database is browser `localStorage` (`dataStore.ts`), not PostgreSQL. Routing is a priority list, not GPS shortest path.
+**Say out loud if asked:** database is browser `localStorage` (`dataStore.ts`), not PostgreSQL. Which bins go on the run is still the ≥80% priority list. The teal line on Route Planning is OSRM road geometry (not AI, not live GPS tracking).
 
 Full click path is still in [../DEMO.md](../DEMO.md).

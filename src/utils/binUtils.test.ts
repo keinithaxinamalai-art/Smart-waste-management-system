@@ -4,6 +4,7 @@ import {
   calculateCollectionPriority,
   generateReportId,
   getBinStatus,
+  getRequiredCollectionSequence,
   normalizeCollectionStatus,
   normalizeReportStatus,
   normalizeTicketStatus,
@@ -95,6 +96,19 @@ describe('Collection Priority Logic (calculateCollectionPriority)', () => {
     const res = calculateCollectionPriority(95, 'Critical', 24);
     expect(res.score).toBe(97);
     expect(res.priority).toBe('Critical');
+  });
+});
+
+describe('Required collection sequence (getRequiredCollectionSequence)', () => {
+  it('keeps only bins at 80% or more and sorts by priority score', () => {
+    const rows = [
+      { id: 'empty', fillLevel: 42, priorityScore: 10 },
+      { id: 'crit', fillLevel: 95, priorityScore: 90 },
+      { id: 'mod', fillLevel: 71, priorityScore: 50 },
+      { id: 'need', fillLevel: 84, priorityScore: 70 },
+    ];
+    const seq = getRequiredCollectionSequence(rows);
+    expect(seq.map((b) => b.id)).toEqual(['crit', 'need']);
   });
 });
 
