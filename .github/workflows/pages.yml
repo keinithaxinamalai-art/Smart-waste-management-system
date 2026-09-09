@@ -30,6 +30,11 @@ jobs:
         env:
           BASE_PATH: /Smart-waste-management-system/
 
+      - name: Add SPA fallback for GitHub Pages
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
