@@ -73,7 +73,8 @@ Also: [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md) · [CONTRIBUTING.md](CO
 - Smart bin fill status from `getBinStatus()`: 0–49% Normal, 50–79% Moderate, 80–89% Collection Required, 90–100% Critical.
 - Collection priority is a rule based score (fill + urgency + overdue time). Not a black box A.I. approach.
 - Collection sequence only includes Collection Required and Critical bins. **Mark Collected** resets fill to 5%. Only reports linked to that `binId` get resolved.
-- Admin dashboard, map, alerts and search all use the same live state.
+- Admin dashboard, live Canberra map (OpenStreetMap), alerts and search all use the same live state.
+- Route Planning draws an OSRM road path from Hume depot through ≥80% bins and back. Stop order is still the priority score, not AI.
 - Maintenance view with simulated sensor faults. **Acknowledge Ticket** then **Mark Resolved**.
 - Vitest tests, ESLint, and GitHub Actions (`ci.yml`) for lint / test / build.
 
