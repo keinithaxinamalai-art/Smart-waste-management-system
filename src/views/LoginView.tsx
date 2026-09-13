@@ -28,7 +28,7 @@ export function LoginView({
       title: 'Administrator',
       email: 'admin@smartwaste.demo',
       pass: 'DemoAdmin123!',
-      name: 'TCCS Manager (Bijay P.)',
+      name: 'Bijay Pokhrel',
       desc: 'System oversight, statistics, priority management & report administration',
       icon: Shield,
     },
