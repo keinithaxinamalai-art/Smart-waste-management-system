@@ -12,7 +12,7 @@ There are three roles: Citizen, Collection Staff and Administrator.
 
 ## Week 6 presentation — how to run it
 
-The URL we want on the projector is:
+The URL we want on the projector is
 
 **https://keinithaxinamalai-art.github.io/Smart-waste-management-system/**
 
