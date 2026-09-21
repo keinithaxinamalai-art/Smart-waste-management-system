@@ -5,15 +5,14 @@
  * can communicate locally without any external broker.
  */
 
-import aedes from 'aedes';
+import { Aedes } from 'aedes';
 import net from 'net';
 
 export function createMqttBroker() {
-  const broker = aedes();
-  const server = net.createServer(broker.handle);
   const MQTT_PORT = 1883;
 
-  return new Promise((resolve, reject) => {
+  return Aedes.createBroker().then((broker) => new Promise((resolve) => {
+    const server = net.createServer(broker.handle);
     server.listen(MQTT_PORT, '0.0.0.0', () => {
       console.log(`[mqtt] Aedes MQTT broker listening on port ${MQTT_PORT}`);
       resolve({ broker, server });
@@ -24,5 +23,5 @@ export function createMqttBroker() {
       console.warn('[mqtt] Assuming an external broker is available at localhost:1883');
       resolve({ broker: null, server: null });
     });
-  });
+  }));
 }

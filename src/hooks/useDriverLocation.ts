@@ -37,12 +37,14 @@ export function useDriverLocation(): DriverLocationState {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setState({
-        location: CANBERRA_CIVIC_FALLBACK,
-        source: 'fallback',
-        errorMsg: 'Geolocation not supported by this browser.',
-      });
-      return;
+      const fallbackUpdate = window.setTimeout(() => {
+        setState({
+          location: CANBERRA_CIVIC_FALLBACK,
+          source: 'fallback',
+          errorMsg: 'Geolocation not supported by this browser.',
+        });
+      }, 0);
+      return () => window.clearTimeout(fallbackUpdate);
     }
 
     const onSuccess = (pos: GeolocationPosition) => {

@@ -77,8 +77,12 @@ function hasValidCoords(bin: Bin): boolean {
   return (
     typeof bin.lat === 'number' &&
     typeof bin.lng === 'number' &&
-    !Number.isNaN(bin.lat) &&
-    !Number.isNaN(bin.lng)
+    Number.isFinite(bin.lat) &&
+    Number.isFinite(bin.lng) &&
+    bin.lat >= -90 &&
+    bin.lat <= 90 &&
+    bin.lng >= -180 &&
+    bin.lng <= 180
   );
 }
 
@@ -127,7 +131,14 @@ export function optimizeCollectionRoute(
       // lat/lng guaranteed by hasValidCoords filter
       const dist = haversineDistance(currentPos, { lat: bin.lat!, lng: bin.lng! });
       const eff = effectiveDistance(dist, bin);
-      if (eff < bestEffective) {
+      const currentBest = remaining[bestIndex];
+      const isBetter = eff < bestEffective - 1e-9;
+      const isTie = Math.abs(eff - bestEffective) <= 1e-9;
+      const winsTie = isTie && (
+        bin.priorityScore > currentBest.priorityScore ||
+        (bin.priorityScore === currentBest.priorityScore && bin.id < currentBest.id)
+      );
+      if (isBetter || winsTie) {
         bestEffective = eff;
         bestActual = dist;
         bestIndex = i;

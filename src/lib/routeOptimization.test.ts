@@ -132,6 +132,26 @@ describe('optimizeCollectionRoute', () => {
     expect(result.stops[0].bin.id).toBe('HAS_COORD');
   });
 
+  it('excludes non-finite and out-of-range coordinates', () => {
+    const bins = [
+      makeBin({ id: 'NAN', fillLevel: 90, lat: Number.NaN, lng: 149.13 }),
+      makeBin({ id: 'INFINITE', fillLevel: 90, lat: -35.2, lng: Number.POSITIVE_INFINITY }),
+      makeBin({ id: 'OUT_OF_RANGE', fillLevel: 90, lat: 91, lng: 149.13 }),
+      makeBin({ id: 'VALID', fillLevel: 90, lat: -35.281, lng: 149.13 }),
+    ];
+    const result = optimizeCollectionRoute(CANBERRA_CIVIC, bins);
+    expect(result.stops.map((stop) => stop.bin.id)).toEqual(['VALID']);
+  });
+
+  it('uses bin ID as a stable tie-breaker', () => {
+    const bins = [
+      makeBin({ id: 'ZED', fillLevel: 80, lat: -35.281, lng: 149.13 }),
+      makeBin({ id: 'ALPHA', fillLevel: 80, lat: -35.281, lng: 149.13 }),
+    ];
+    const result = optimizeCollectionRoute(CANBERRA_CIVIC, bins);
+    expect(result.stops.map((stop) => stop.bin.id)).toEqual(['ALPHA', 'ZED']);
+  });
+
   it('stop numbers are sequential starting from 1', () => {
     const bins = [
       makeBin({ id: 'A', fillLevel: 90, lat: -35.281, lng: 149.13 }),

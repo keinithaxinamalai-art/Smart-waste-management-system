@@ -18,7 +18,7 @@ import {
   saveStoredReports,
   updateMaintenanceTicketStatus,
 } from '../services/dataStore';
-import { fetchBins, checkHealth, collectBin as apiBinCollect } from '../services/api';
+import { fetchBins, checkHealth, collectBin as apiBinCollect, assignCollectionRoute as apiAssignCollectionRoute, resetBackendDemoData } from '../services/api';
 import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
 
@@ -192,30 +192,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const triggerCollection = useCallback((binId: string) => {
-    // If backend is available, also notify it to update the database
-    if (backendAvailable) {
-      apiBinCollect(binId).then((result) => {
-        if (result.bin) {
-          setBins((prev) => prev.map((b) => (b.id === binId ? result.bin : b)));
-          saveStoredBins(bins.map((b) => (b.id === binId ? result.bin : b)));
-        }
-      }).catch(() => {
-        // Backend failed, fall through to local-only collection
-      });
-    }
-
     // Always apply local collection logic so UI remains responsive
     const { updatedBins, updatedReports, updatedCollections } =
       executeBinCollection(binId);
     setBins(updatedBins);
     setReports(updatedReports);
     setCollections(updatedCollections);
-  }, [backendAvailable, bins]);
+
+    if (backendAvailable) {
+      apiBinCollect(binId)
+        .then(() => fetchBins())
+        .then((freshBins) => {
+          setBins(freshBins);
+          saveStoredBins(freshBins);
+        })
+        .catch(() => { /* retain the responsive local fallback */ });
+    }
+  }, [backendAvailable]);
 
   const assignRoute = useCallback((driverName?: string) => {
     const updatedCollections = assignCollectionRoute(driverName);
     setCollections(updatedCollections);
-  }, []);
+    if (backendAvailable) {
+      apiAssignCollectionRoute(driverName).catch(() => { /* retain local fallback */ });
+    }
+  }, [backendAvailable]);
 
   const setTicketStatus = useCallback((id: string, status: TicketStatus) => {
     const updated = updateMaintenanceTicketStatus(id, status);
@@ -228,7 +229,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setReports(fresh.reports);
     setCollections(fresh.collections);
     setTickets(fresh.tickets);
-  }, []);
+    if (backendAvailable) {
+      resetBackendDemoData()
+        .then(() => fetchBins())
+        .then((freshBins) => {
+          setBins(freshBins);
+          saveStoredBins(freshBins);
+        })
+        .catch(() => { /* retain local fallback */ });
+    }
+  }, [backendAvailable]);
 
   const newReportCount = useMemo(
     () => reports.filter((r) => r.status === 'Submitted').length,
