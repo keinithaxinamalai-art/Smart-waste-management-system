@@ -71,7 +71,7 @@ Use a fresh / incognito window if leftover demo data is on the screen. Administr
 
 ## How to run it locally (development)
 
-Needs Node.js 18+ and npm.
+Needs Node.js 22+ and npm.
 
 ```bash
 npm install
@@ -82,6 +82,18 @@ npm run build
 ```
 
 `npm run dev` is the same server as `npm run demo`.
+
+## Database, MQTT and Route Optimisation
+
+For the full local demo, run the services in separate terminals:
+
+```bash
+npm run server   # Express, SQLite and local MQTT broker
+npm run dev      # React frontend
+npm run simulate # MQTT bin telemetry simulator
+```
+
+The live flow is Simulator → MQTT → Express → SQLite → REST → React. Browser geolocation provides the route origin; route optimisation and Leaflet/OpenStreetMap display the collection route and bin markers. GitHub Pages remains a frontend/static demo. The SQLite/MQTT workflow requires the local Node server unless a backend is deployed separately.
 
 ---
 

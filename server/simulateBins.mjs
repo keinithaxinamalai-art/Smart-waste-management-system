@@ -16,20 +16,12 @@ import mqtt from 'mqtt';
 const MQTT_URL = 'mqtt://localhost:1883';
 const TOPIC_BASE = 'smartwaste/bins';
 
-// Simulate the existing demo bins from src/services/dataStore.ts
-// Starting fill levels (mirror INITIAL_BINS)
-const simulatedBins = [
-  { id: 'WDN-104', fillLevel: 92, sensorStatus: 'Online', suburb: 'Woden' },
-  { id: 'BEL-022', fillLevel: 84, sensorStatus: 'Online', suburb: 'Belconnen' },
-  { id: 'CIV-016', fillLevel: 80, sensorStatus: 'Online', suburb: 'Canberra City' },
-  { id: 'TUG-009', fillLevel: 42, sensorStatus: 'Warning', suburb: 'Tuggeranong' },
-  { id: 'GUN-015', fillLevel: 95, sensorStatus: 'Fault', suburb: 'Gungahlin' },
-  { id: 'DIC-008', fillLevel: 88, sensorStatus: 'Online', suburb: 'Dickson' },
-  { id: 'MAN-031', fillLevel: 56, sensorStatus: 'Online', suburb: 'Manuka' },
-];
+const API_URL = process.env.VITE_API_URL || 'http://localhost:3001';
+const simulatedBins = [];
+let initialized = false;
 
 // Track recently collected bins to avoid immediate refill
-const recentlyCollected = new Set();
+const recentlyCollected = new Map();
 
 function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
@@ -68,9 +60,62 @@ async function main() {
   });
 
   client.on('connect', () => {
-    console.log('[sim] Connected to broker. Starting bin simulation...');
-    console.log('[sim] Publishing telemetry for bins:', simulatedBins.map((b) => b.id).join(', '));
-    console.log('[sim] Press Ctrl+C to stop.\n');
+    if (initialized) return;
+    initialized = true;
+    initializeFromBackend(client).catch((err) => {
+      console.error('[sim] Could not load current bins from backend:', err.message);
+      client.end(true);
+      process.exit(1);
+    });
+  });
+
+  // Listen for collection confirmations to reset fill level in simulator state.
+  client.on('message', (topic, payload) => {
+    if (topic.includes('/collected')) {
+      try {
+        const data = JSON.parse(payload.toString());
+        const bin = simulatedBins.find((b) => b.id === data.binId);
+        if (bin) {
+          console.log(`[sim] Bin ${bin.id} was collected — resetting simulator fill to 5%`);
+          bin.fillLevel = 5;
+          bin.sensorStatus = 'Online';
+          recentlyCollected.set(bin.id, 3);
+        }
+      } catch { /* ignore malformed event */ }
+    }
+  });
+
+  client.on('error', (err) => {
+    console.error('[sim] MQTT error:', err.message);
+    if (err.message.includes('ECONNREFUSED')) {
+      console.error('[sim] Cannot connect to broker. Make sure the server is running first:');
+      console.error('[sim]   npm run server');
+      process.exit(1);
+    }
+  });
+
+  process.on('SIGINT', () => {
+    console.log('\n[sim] Stopping simulator...');
+    client.end(true, () => {
+      console.log('[sim] Disconnected. Goodbye!');
+      process.exit(0);
+    });
+  });
+}
+
+async function initializeFromBackend(client) {
+  const response = await fetch(`${API_URL}/api/bins`);
+  if (!response.ok) throw new Error(`API returned ${response.status}`);
+  const bins = await response.json();
+  simulatedBins.push(...bins.map((bin) => ({
+    id: bin.id,
+    fillLevel: bin.fillLevel,
+    sensorStatus: bin.sensorStatus,
+    suburb: bin.suburb,
+  })));
+  console.log('[sim] Connected to broker. Starting bin simulation...');
+  console.log('[sim] Publishing telemetry for bins:', simulatedBins.map((b) => b.id).join(', '));
+  console.log('[sim] Press Ctrl+C to stop.\n');
 
     // Publish initial state for all bins immediately
     for (const bin of simulatedBins) {
@@ -82,8 +127,9 @@ async function main() {
       const bin = simulatedBins[Math.floor(Math.random() * simulatedBins.length)];
 
       // Skip recently collected bins for 3 cycles to avoid immediate re-fill
-      if (recentlyCollected.has(bin.id)) {
-        recentlyCollected.delete(bin.id); // Unblock after one skip
+      const graceCycles = recentlyCollected.get(bin.id) || 0;
+      if (graceCycles > 0) {
+        recentlyCollected.set(bin.id, graceCycles - 1);
         return;
       }
 
@@ -105,41 +151,6 @@ async function main() {
     client.subscribe('smartwaste/bins/+/collected', (err) => {
       if (!err) console.log('[sim] Subscribed to collection events');
     });
-  });
-
-  // Listen for collection confirmations to reset fill level in sim state
-  client.on('message', (topic, payload) => {
-    if (topic.includes('/collected')) {
-      try {
-        const data = JSON.parse(payload.toString());
-        const bin = simulatedBins.find((b) => b.id === data.binId);
-        if (bin) {
-          console.log(`[sim] Bin ${bin.id} was collected — resetting simulator fill to 5%`);
-          bin.fillLevel = 5;
-          bin.sensorStatus = 'Online';
-          recentlyCollected.add(bin.id);
-        }
-      } catch { /* ignore */ }
-    }
-  });
-
-  client.on('error', (err) => {
-    console.error('[sim] MQTT error:', err.message);
-    if (err.message.includes('ECONNREFUSED')) {
-      console.error('[sim] Cannot connect to broker. Make sure the server is running first:');
-      console.error('[sim]   npm run server');
-      process.exit(1);
-    }
-  });
-
-  // Graceful shutdown
-  process.on('SIGINT', () => {
-    console.log('\n[sim] Stopping simulator...');
-    client.end(true, () => {
-      console.log('[sim] Disconnected. Goodbye!');
-      process.exit(0);
-    });
-  });
 }
 
 main();

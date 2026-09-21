@@ -17,7 +17,7 @@
 import express from 'express';
 import cors from 'cors';
 import mqtt from 'mqtt';
-import { db, stmts, getBinStatusServer, calcPriorityServer } from './db.mjs';
+import { db, stmts, getBinStatusServer, calcPriorityServer, hoursSinceCollected, resetDemoData } from './db.mjs';
 import { createMqttBroker } from './mqtt.mjs';
 
 const PORT = process.env.PORT || 3001;
@@ -25,6 +25,7 @@ const MQTT_URL = 'mqtt://localhost:1883';
 const TELEMETRY_TOPIC = 'smartwaste/bins/+/telemetry';
 
 const app = express();
+let mqttClient;
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -80,7 +81,7 @@ app.patch('/api/bins/:id', (req, res) => {
   const newFill = fillLevel !== undefined ? Number(fillLevel) : row.fill_level;
   const newSensor = sensorStatus || row.sensor_status;
   const newStatus = getBinStatusServer(newFill);
-  const { score, priority } = calcPriorityServer(newFill, 48);
+  const { score, priority } = calcPriorityServer(newFill, hoursSinceCollected(row.last_collected));
 
   stmts.updateBinTelemetry.run({
     id: req.params.id,
@@ -116,7 +117,17 @@ app.post('/api/bins/:id/collect', (req, res) => {
   stmts.resolveReportsForBin.run({ bin_id: req.params.id });
 
   const updatedBin = stmts.getBinById.get(req.params.id);
+  mqttClient?.publish(
+    `smartwaste/bins/${req.params.id}/collected`,
+    JSON.stringify({ binId: req.params.id, fillLevel: 5, timestamp: now }),
+    { qos: 0, retain: false },
+  );
   res.json({ success: true, bin: rowToFrontendBin(updatedBin) });
+});
+
+app.post('/api/reset', (_req, res) => {
+  resetDemoData();
+  res.json({ success: true });
 });
 
 app.get('/api/collections', (_req, res) => {
@@ -146,7 +157,7 @@ app.post('/api/routes/assign', (req, res) => {
 // ────────────────────────────────────────────────────────────────────────────
 
 function startMqttSubscriber() {
-  const client = mqtt.connect(MQTT_URL, {
+  const client = mqttClient = mqtt.connect(MQTT_URL, {
     clientId: `smartwaste-server-${Date.now()}`,
     reconnectPeriod: 3000,
   });
@@ -161,16 +172,26 @@ function startMqttSubscriber() {
 
   client.on('message', (topic, payload) => {
     try {
+      const topicMatch = topic.match(/^smartwaste\/bins\/([^/]+)\/telemetry$/);
+      if (!topicMatch) return;
       const data = JSON.parse(payload.toString());
 
       // Validate required fields
       if (
         typeof data.binId !== 'string' ||
+        data.binId.trim() === '' ||
+        data.binId !== topicMatch[1] ||
         typeof data.fillLevel !== 'number' ||
+        !Number.isFinite(data.fillLevel) ||
         data.fillLevel < 0 ||
         data.fillLevel > 100
       ) {
         console.warn('[mqtt] Rejected malformed telemetry:', data);
+        return;
+      }
+
+      if (data.timestamp !== undefined && (!Number.isFinite(Date.parse(data.timestamp)))) {
+        console.warn('[mqtt] Rejected telemetry with invalid timestamp:', data);
         return;
       }
 
@@ -184,7 +205,7 @@ function startMqttSubscriber() {
       const newFill = Math.max(0, Math.min(100, Math.round(data.fillLevel)));
       const newSensor = typeof data.sensorStatus === 'string' ? data.sensorStatus : row.sensor_status;
       const newStatus = getBinStatusServer(newFill);
-      const { score, priority } = calcPriorityServer(newFill, 48);
+      const { score, priority } = calcPriorityServer(newFill, hoursSinceCollected(row.last_collected));
 
       stmts.updateBinTelemetry.run({
         id: binId,

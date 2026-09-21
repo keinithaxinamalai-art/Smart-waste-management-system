@@ -75,3 +75,8 @@ export async function assignCollectionRoute(driver?: string): Promise<{ success:
     body: JSON.stringify({ driver }),
   });
 }
+
+/** Reset backend demo data when the database is active. */
+export async function resetBackendDemoData(): Promise<void> {
+  await safeFetch<{ success: boolean }>('/api/reset', { method: 'POST' });
+}

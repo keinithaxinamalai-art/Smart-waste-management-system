@@ -54,6 +54,12 @@ export function calcPriorityServer(fillLevel, hoursSinceCollected = 0) {
   return { score, priority };
 }
 
+export function hoursSinceCollected(lastCollected, now = Date.now()) {
+  const timestamp = Date.parse(lastCollected || '');
+  if (!Number.isFinite(timestamp)) return 0;
+  return Math.max(0, (now - timestamp) / 3600000);
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Schema creation
 // ────────────────────────────────────────────────────────────────────────────
@@ -231,6 +237,46 @@ if (ticketCount.c === 0) {
   });
   seedTickets();
   console.log('[db] Seeded maintenance_tickets table with demo data');
+}
+
+export function resetDemoData() {
+  const reset = db.transaction(() => {
+    db.prepare('DELETE FROM public_reports').run();
+    db.prepare('DELETE FROM collections').run();
+    db.prepare('DELETE FROM maintenance_tickets').run();
+    db.prepare('DELETE FROM bins').run();
+
+    const now = new Date().toISOString();
+    const insertBin = db.prepare(`
+      INSERT INTO bins (id, location, suburb, fill_level, waste_type, status, sensor_status, last_collected, collection_priority, priority_score, lat, lng, updated_at)
+      VALUES (@id, @location, @suburb, @fill_level, @waste_type, @status, @sensor_status, @last_collected, @collection_priority, @priority_score, @lat, @lng, @updated_at)
+    `);
+    for (const bin of INITIAL_BINS) {
+      const { score, priority } = calcPriorityServer(bin.fill_level, 48);
+      insertBin.run({ ...bin, status: getBinStatusServer(bin.fill_level), collection_priority: priority, priority_score: score, updated_at: now });
+    }
+
+    const insertReport = db.prepare(`
+      INSERT INTO public_reports (id, issue, issue_label, location, suburb, description, urgency, waste_type, bin_id, reporter_name, reporter_email, photo_attached, status, created_at, lat, lng)
+      VALUES (@id, @issue, @issue_label, @location, @suburb, @description, @urgency, @waste_type, @bin_id, @reporter_name, @reporter_email, @photo_attached, @status, @created_at, @lat, @lng)
+    `);
+    for (const report of INITIAL_REPORTS) {
+      insertReport.run({ ...report, reporter_email: report.reporter_email || null, bin_id: report.bin_id || null, waste_type: report.waste_type || null, issue_label: report.issue_label || null, created_at: now, lat: report.lat || null, lng: report.lng || null });
+    }
+
+    const insertCollection = db.prepare(`
+      INSERT INTO collections (id, bin_id, suburb, location, scheduled_date, status, priority, assigned_to)
+      VALUES (@id, @bin_id, @suburb, @location, @scheduled_date, @status, @priority, @assigned_to)
+    `);
+    for (const collection of INITIAL_COLLECTIONS) insertCollection.run(collection);
+
+    const insertTicket = db.prepare(`
+      INSERT INTO maintenance_tickets (id, bin_id, location, suburb, fault_type, status, created_at, updated_at, notes)
+      VALUES (@id, @bin_id, @location, @suburb, @fault_type, @status, @created_at, @updated_at, @notes)
+    `);
+    for (const ticket of INITIAL_TICKETS) insertTicket.run({ ...ticket, created_at: now, updated_at: now, notes: ticket.notes || null });
+  });
+  reset();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
