@@ -89,3 +89,34 @@
   border-radius: var(--radius-sm);
   line-height: 1.5;
 }
+
+.route-order--depot {
+  background: var(--gray-800);
+}
+
+.route-toast {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.btn-success {
+  background: #047857;
+  color: #fff;
+}
+
+.btn-success:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
+.route-fill--warn {
+  color: var(--amber-600);
+}

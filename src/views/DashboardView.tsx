@@ -176,7 +176,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-header">
-            <h2>Prototype Smart-Bin Telemetry Map</h2>
+            <h2>Canberra bin map</h2>
             <button
               type="button"
               className="btn btn-secondary"
@@ -186,7 +186,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
             </button>
           </div>
           <div className="card-body" style={{ paddingTop: 0 }}>
-            <MapPanel />
+            <MapPanel height={340} />
           </div>
         </div>
 
@@ -239,11 +239,11 @@ export function MapView() {
     <>
       <div className="page-header">
         <h1>Canberra Bin Network Map</h1>
-        <p>Geographic view of smart bins across ACT suburbs — click markers for details</p>
+        <p>Live OpenStreetMap of the seeded ACT bins — click a pin for fill and priority</p>
       </div>
       <div className="card">
         <div className="card-body">
-          <MapPanel />
+          <MapPanel height={520} showRoute />
         </div>
       </div>
       <div className="card" style={{ marginTop: '1.25rem' }}>

@@ -6,8 +6,9 @@ import {
   MapPin,
   Truck,
 } from 'lucide-react';
+import { CanberraMap } from '../components/CanberraMap';
 import { useApp } from '../hooks/useApp';
-import { getBinStatus } from '../utils/binUtils';
+import { getBinStatus, getRequiredCollectionSequence } from '../utils/binUtils';
 import './DriverView.css';
 
 interface DriverViewProps {
@@ -19,12 +20,7 @@ export function DriverView({ onLogout }: DriverViewProps) {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Filter required priority stops (fillLevel >= 80%) sorted by priority score descending
-  const queue = [...bins]
-    .filter((b) => {
-      const status = getBinStatus(b.fillLevel);
-      return status === 'Critical' || status === 'Collection Required';
-    })
-    .sort((a, b) => b.priorityScore - a.priorityScore);
+  const queue = getRequiredCollectionSequence(bins);
 
   const nextStop = queue.length > 0 ? queue[0] : null;
   const upcomingStops = queue.slice(1, 4);
@@ -96,6 +92,10 @@ export function DriverView({ onLogout }: DriverViewProps) {
             <Check size={20} />
             Mark Collected & Empty Bin
           </button>
+
+          <div style={{ marginTop: '1.25rem' }}>
+            <CanberraMap bins={bins} routeStops={queue} height={320} showDepot selectedBinId={nextStop.id} />
+          </div>
 
           {upcomingStops.length > 0 && (
             <div className="driver-queue">

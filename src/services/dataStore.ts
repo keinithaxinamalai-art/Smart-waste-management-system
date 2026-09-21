@@ -305,10 +305,15 @@ export function getStoredBins(): Bin[] {
       return INITIAL_BINS;
     }
     const parsed: Bin[] = JSON.parse(raw);
-    return parsed.map((b) => ({
-      ...b,
-      status: getBinStatus(b.fillLevel),
-    }));
+    return parsed.map((b) => {
+      const seed = INITIAL_BINS.find((s) => s.id === b.id);
+      return {
+        ...b,
+        status: getBinStatus(b.fillLevel),
+        lat: typeof b.lat === 'number' ? b.lat : seed?.lat,
+        lng: typeof b.lng === 'number' ? b.lng : seed?.lng,
+      };
+    });
   } catch {
     return INITIAL_BINS;
   }

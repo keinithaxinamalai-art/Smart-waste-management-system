@@ -1,4 +1,5 @@
 import type {
+  Bin,
   BinStatusLabel,
   CollectionPriority,
   CollectionStatus,
@@ -192,4 +193,19 @@ export function validateWasteReport(
     isValid: Object.keys(errors).length === 0,
     errors,
   };
+}
+
+/**
+ * Driver / route-planning sequence: only Collection Required and Critical bins,
+ * highest priority score first. Empty and moderate bins stay off the truck list.
+ */
+export function getRequiredCollectionSequence<T extends Pick<Bin, 'fillLevel' | 'priorityScore'>>(
+  bins: T[]
+): T[] {
+  return [...bins]
+    .filter((b) => {
+      const status = getBinStatus(b.fillLevel);
+      return status === 'Critical' || status === 'Collection Required';
+    })
+    .sort((a, b) => b.priorityScore - a.priorityScore);
 }
