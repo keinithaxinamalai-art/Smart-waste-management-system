@@ -15,6 +15,11 @@ dist-ssr
 .env.*
 !.env.example
 
+# SQLite database (runtime data — seeded automatically on first run)
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

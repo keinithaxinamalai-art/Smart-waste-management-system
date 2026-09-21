@@ -18,8 +18,12 @@ import {
   saveStoredReports,
   updateMaintenanceTicketStatus,
 } from '../services/dataStore';
+import { fetchBins, checkHealth, collectBin as apiBinCollect } from '../services/api';
 import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
+
+/** Live backend poll interval — 4 seconds */
+const BACKEND_POLL_INTERVAL_MS = 4000;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>(() => {
@@ -27,7 +31,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (savedRole === 'admin' || savedRole === 'staff' || savedRole === 'citizen') {
       return savedRole;
     }
-    return null; // Unauthenticated by default
+    return null;
   });
 
   const [userName, setUserName] = useState<string>(() => {
@@ -44,6 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getStoredCollections()
   );
   const [tickets, setTickets] = useState<MaintenanceTicket[]>(() => getStoredTickets());
+  const [backendAvailable, setBackendAvailable] = useState(false);
 
   const refreshData = useCallback(() => {
     setBins(getStoredBins());
@@ -51,6 +56,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollections(getStoredCollections());
     setTickets(getStoredTickets());
   }, []);
+
+  // ── Backend polling ───────────────────────────────────────────────────────
+  // When the backend is running, poll every 4 seconds to pick up MQTT telemetry.
+  // Falls back to localStorage silently if the backend is unavailable.
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = async () => {
+      const healthy = await checkHealth();
+      setBackendAvailable(healthy);
+
+      if (!healthy) return;
+
+      // Immediately load bins from database on connect
+      try {
+        const apiBins = await fetchBins();
+        if (apiBins.length > 0) {
+          setBins(apiBins);
+          saveStoredBins(apiBins); // Keep localStorage in sync
+        }
+      } catch { /* backend went away */ }
+
+      // Poll for live MQTT telemetry updates
+      intervalId = setInterval(async () => {
+        try {
+          const apiBins = await fetchBins();
+          if (apiBins.length > 0) {
+            setBins(apiBins);
+            saveStoredBins(apiBins);
+          }
+        } catch {
+          // Backend unavailable — continue using in-memory state
+        }
+      }, BACKEND_POLL_INTERVAL_MS);
+    };
+
+    startPolling();
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (role) {
@@ -144,12 +192,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const triggerCollection = useCallback((binId: string) => {
+    // If backend is available, also notify it to update the database
+    if (backendAvailable) {
+      apiBinCollect(binId).then((result) => {
+        if (result.bin) {
+          setBins((prev) => prev.map((b) => (b.id === binId ? result.bin : b)));
+          saveStoredBins(bins.map((b) => (b.id === binId ? result.bin : b)));
+        }
+      }).catch(() => {
+        // Backend failed, fall through to local-only collection
+      });
+    }
+
+    // Always apply local collection logic so UI remains responsive
     const { updatedBins, updatedReports, updatedCollections } =
       executeBinCollection(binId);
     setBins(updatedBins);
     setReports(updatedReports);
     setCollections(updatedCollections);
-  }, []);
+  }, [backendAvailable, bins]);
 
   const assignRoute = useCallback((driverName?: string) => {
     const updatedCollections = assignCollectionRoute(driverName);

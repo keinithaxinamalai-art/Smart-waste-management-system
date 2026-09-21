@@ -4,9 +4,12 @@ import {
   CheckCircle2,
   LogOut,
   MapPin,
+  Navigation,
   Truck,
 } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
+import { useDriverLocation } from '../hooks/useDriverLocation';
+import { optimizeCollectionRoute } from '../lib/routeOptimization';
 import { getBinStatus } from '../utils/binUtils';
 import './DriverView.css';
 
@@ -16,15 +19,12 @@ interface DriverViewProps {
 
 export function DriverView({ onLogout }: DriverViewProps) {
   const { bins, triggerCollection } = useApp();
+  const { location: driverLocation, source: locationSource } = useDriverLocation();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Filter required priority stops (fillLevel >= 80%) sorted by priority score descending
-  const queue = [...bins]
-    .filter((b) => {
-      const status = getBinStatus(b.fillLevel);
-      return status === 'Critical' || status === 'Collection Required';
-    })
-    .sort((a, b) => b.priorityScore - a.priorityScore);
+  // Use the same optimized route as RoutesView (nearest-neighbour from driver location)
+  const route = optimizeCollectionRoute(driverLocation, bins);
+  const queue = route.stops;
 
   const nextStop = queue.length > 0 ? queue[0] : null;
   const upcomingStops = queue.slice(1, 4);
@@ -39,7 +39,29 @@ export function DriverView({ onLogout }: DriverViewProps) {
     <div className="driver-container">
       <div className="page-header">
         <h1>Collection Staff — Route ACT-R104</h1>
-        <p>Active collection run · Prioritized by smart-bin fill telemetry (≥80% fill)</p>
+        <p>Active collection run · Optimized from driver location · Bins ≥80% fill</p>
+      </div>
+
+      {/* Location source indicator */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 0.875rem',
+          borderRadius: 6,
+          fontSize: '0.8rem',
+          fontWeight: 500,
+          marginBottom: '1rem',
+          background: locationSource === 'gps' ? '#d1fae5' : '#fef3c7',
+          color: locationSource === 'gps' ? '#065f46' : '#92400e',
+          border: `1px solid ${locationSource === 'gps' ? '#a7f3d0' : '#fde68a'}`,
+        }}
+      >
+        {locationSource === 'gps' ? <Navigation size={14} /> : <MapPin size={14} />}
+        {locationSource === 'gps'
+          ? `GPS Active — Route from ${driverLocation.lat.toFixed(3)}°, ${driverLocation.lng.toFixed(3)}°`
+          : 'Demo Mode — Canberra Civic fallback location'}
       </div>
 
       {successMsg && (
@@ -65,25 +87,28 @@ export function DriverView({ onLogout }: DriverViewProps) {
       {nextStop ? (
         <div className="driver-card card">
           <div className="driver-next">
-            <span className="driver-label">Priority Stop #1</span>
-            <h2>{nextStop.id}</h2>
+            <span className="driver-label">Optimized Stop #1</span>
+            <h2>{nextStop.bin.id}</h2>
             <p className="driver-location">
-              <MapPin size={16} /> {nextStop.location} ({nextStop.suburb})
+              <MapPin size={16} /> {nextStop.bin.location} ({nextStop.bin.suburb})
+            </p>
+            <p style={{ fontSize: '0.8rem', color: '#3b82f6', margin: '0.25rem 0 0' }}>
+              📍 {nextStop.distanceFromPrevKm.toFixed(1)} km from your current position
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
               <span
                 className={`badge ${
-                  nextStop.fillLevel >= 90 ? 'badge-critical' : 'badge-warning'
+                  nextStop.bin.fillLevel >= 90 ? 'badge-critical' : 'badge-warning'
                 }`}
                 style={{ fontSize: '0.9rem' }}
               >
-                {nextStop.fillLevel}% Fill ({getBinStatus(nextStop.fillLevel)})
+                {nextStop.bin.fillLevel}% Fill ({getBinStatus(nextStop.bin.fillLevel)})
               </span>
               <span className="badge badge-warning" style={{ fontSize: '0.9rem' }}>
-                Priority: {nextStop.collectionPriority} ({nextStop.priorityScore})
+                Priority: {nextStop.bin.collectionPriority} ({nextStop.bin.priorityScore})
               </span>
               <span className="badge badge-normal" style={{ fontSize: '0.9rem' }}>
-                Type: {nextStop.wasteType}
+                Type: {nextStop.bin.wasteType}
               </span>
             </div>
           </div>
@@ -91,7 +116,7 @@ export function DriverView({ onLogout }: DriverViewProps) {
           <button
             type="button"
             className="btn btn-primary driver-action"
-            onClick={() => handleMarkCollected(nextStop.id)}
+            onClick={() => handleMarkCollected(nextStop.bin.id)}
           >
             <Check size={20} />
             Mark Collected & Empty Bin
@@ -101,8 +126,9 @@ export function DriverView({ onLogout }: DriverViewProps) {
             <div className="driver-queue">
               <span>Upcoming stops: </span>
               {upcomingStops.map((stop, idx) => (
-                <span key={stop.id} style={{ fontWeight: 600 }}>
-                  #{idx + 2} {stop.id} ({stop.suburb} · {stop.fillLevel}%){idx < upcomingStops.length - 1 ? ' → ' : ''}
+                <span key={stop.bin.id} style={{ fontWeight: 600 }}>
+                  #{idx + 2} {stop.bin.id} ({stop.bin.suburb} · {stop.bin.fillLevel}% · {stop.distanceFromPrevKm.toFixed(1)}km)
+                  {idx < upcomingStops.length - 1 ? ' → ' : ''}
                 </span>
               ))}
             </div>
