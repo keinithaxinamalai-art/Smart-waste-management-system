@@ -57,6 +57,30 @@
   color: var(--gray-500);
 }
 
+.sensor-state {
+  display: inline-flex;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.sensor-state--online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sensor-state--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sensor-state--fault,
+.sensor-state--offline {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .maintenance-actions {
   display: flex;
   flex-direction: column;

@@ -144,6 +144,7 @@ export function MaintenanceView() {
             <ul className="maintenance-list">
               {visibleTickets.map((ticket) => {
                 const Icon = FAULT_ICONS[ticket.faultType];
+                const linkedBin = bins.find((bin) => bin.id === ticket.binId);
                 return (
                   <li key={ticket.id} className="maintenance-item">
                     <div className={`maintenance-icon maintenance-icon--${ticket.faultType}`}>
@@ -157,7 +158,14 @@ export function MaintenanceView() {
                         {ticket.binId} — {ticket.location} ({ticket.suburb})
                       </strong>
                       <p>{ticket.notes || FAULT_DETAILS[ticket.faultType]}</p>
-                      <span className="maintenance-meta">Updated {formatDate(ticket.updatedAt)}</span>
+                      <span className="maintenance-meta">
+                        Updated {formatDate(ticket.updatedAt)}
+                        {linkedBin && (
+                          <span className={`sensor-state sensor-state--${linkedBin.sensorStatus.toLowerCase()}`}>
+                            Sensor {linkedBin.sensorStatus}
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <div className="maintenance-actions">
                       <span className={`ticket-status ticket-status--${ticket.status.replace(/\s+/g, '-').toLowerCase()}`}>
