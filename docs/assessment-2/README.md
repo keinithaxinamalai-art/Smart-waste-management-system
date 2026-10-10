@@ -1,6 +1,10 @@
 # Assessment 2 — what to put on Moodle
 
-One member uploads one Word report. Attach the CIHE cover sheet. Paste the **Jira URL** on the cover and on the first page of the report (it is still a placeholder).
+One member uploads one Word report. Attach the CIHE cover sheet.
+
+**GitHub:** https://github.com/keinithaxinamalai-art/Smart-waste-management-system  
+**Live demo:** https://keinithaxinamalai-art.github.io/Smart-waste-management-system/  
+**Jira:** https://student-team-frnx73gf.atlassian.net/jira/software/projects/SMAR
 
 ## Files in this folder
 
@@ -15,7 +19,7 @@ Root copies for a quick ZIP: `ICT308-Assessment-2-Technical-Report.docx` and `IC
 
 ## Before upload
 
-1. Paste the live Jira link.
+1. Confirm the Jira link above is in the Word report and cover sheet.
 2. Export one Jira board screenshot (To Do / In Progress / Done).
 3. On the demonstration laptop, take screenshots named in the user guide and paste them into the Word user guide.
 4. Run `npm test` (22 passing) and keep a terminal screenshot.

@@ -5,7 +5,8 @@
 **Unit:** ICT308 – Project 2 (BIT) · Semester 2, 2026  
 **Group:** Bijay Pokhrel, Samir Bhandari, Krishna Trivedi, Ayush Ale, Charanpal Kaur  
 **GitHub:** https://github.com/keinithaxinamalai-art/Smart-waste-management-system  
-**Jira:** (paste the group Jira project link here before Moodle submit)
+**Live demo:** https://keinithaxinamalai-art.github.io/Smart-waste-management-system/  
+**Jira:** https://student-team-frnx73gf.atlassian.net/jira/software/projects/SMAR
 
 This report is the Assessment 2 final delivery. It covers the completed prototype after Iteration 1 (Assessment 1) and the work needed for the Week 11 demonstration. The User Guide is a separate appendix (`USER-GUIDE.md`). Assessment 3 poster and individual reflections sit under `docs/assessment-3/`.
 

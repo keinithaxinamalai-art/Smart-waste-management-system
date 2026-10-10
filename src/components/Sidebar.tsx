@@ -59,7 +59,7 @@ export function Sidebar({ active, onNavigate, onPublicReport, mobileOpen, onClos
         </div>
         <div>
           <span className="sidebar-title">Smart Waste</span>
-          <span className="sidebar-subtitle">Canberra · TCCS Pilot</span>
+          <span className="sidebar-subtitle">Canberra · TCCS</span>
         </div>
       </div>
 

@@ -1,41 +1,25 @@
 # Canberra SmartWaste
 
-ICT308 – Project 2 (BIT Capstone), Iteration 1 prototype
+ICT308 – Project 2 (BIT Capstone) · **Assessment 2 Final Delivery**
 
 **Group:** Bijay Pokhrel, Samir Bhandari, Krishna Trivedi, Ayush Ale, Charanpal Kaur
 
-Canberra SmartWaste is a software prototype to make it easier to see and manage municipal waste collection in Canberra. Efficiencies can be lost with fixed collection days due to the fact that bins in busy areas might fill at different times, and refuse collection vehicles could be taking out bins that don't need to be emptied. Iteration 1 is the software side only (React 19, TypeScript, Vite). We are not deploying real IoT hardware. Bin data is simulated and saved in the browser with `localStorage`.
+Canberra SmartWaste is a smart waste operations system for ACT Government / TCCS. Citizens report waste issues, collection staff complete pickups, and administrators monitor bins, routes, alerts and maintenance.
 
-There are three roles: Citizen, Collection Staff and Administrator.
+**Live demo (GitHub Pages):**  
+https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
+
+**Repository:**  
+https://github.com/keinithaxinamalai-art/Smart-waste-management-system
+
+**Jira:**  
+https://student-team-frnx73gf.atlassian.net/jira/software/projects/SMAR
+
+The Pages site is the React frontend. Express + SQLite + MQTT run locally (`npm run demo` plus the backend if you use the full stack). Bin telemetry on Pages is demonstration data.
 
 ---
 
-## Week 6 presentation — how to run it
-
-The URL we want on the projector is:
-
-**https://keinithaxinamalai-art.github.io/Smart-waste-management-system/**
-
-That site is the built Vite app on the `gh-pages` branch. GitHub Pages is **not turned on yet**, so the link will 404 until someone with repo Settings access does this:
-
-1. Open the repository on GitHub
-2. **Settings → Pages**
-3. Build and deployment → Source: **Deploy from a branch**
-4. Branch: **`gh-pages`**, folder: **`/ (root)`**
-5. Save
-
-After that the URL above should load. Speaking notes: [docs/DEMO.md](docs/DEMO.md).
-
-If Pages is still not working in class, run it on the laptop (no extra tools besides Node):
-
-```bash
-npm install
-npm run demo
-```
-
-Then open http://localhost:5173/
-
-### Demo logins
+## Demo logins
 
 | Role | Email | Password |
 |---|---|---|
@@ -43,63 +27,56 @@ Then open http://localhost:5173/
 | Collection Staff | `staff@smartwaste.demo` | `DemoStaff123!` |
 | Citizen | `citizen@smartwaste.demo` | `DemoCitizen123!` |
 
-Use a fresh / incognito window if leftover demo data is on the screen. Administrator can click **Reset Demo Data**.
+Public users can also click **Report a Full Bin** with no account.
 
 ---
 
-## Assessment documents (1, 2 and 3)
-
-**Assessment 1 — Iteration 1 (Week 6)**  
-[docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) · [docs/DEMO.md](docs/DEMO.md)  
-Word: [docs/ITERATION-1-REPORT.docx](docs/ITERATION-1-REPORT.docx) · Moodle copy: [Project.docx](Project.docx) · original PDF: [docs/Canberra-SmartWaste-Iteration1-Report.pdf](docs/Canberra-SmartWaste-Iteration1-Report.pdf)
-
-**Assessment 2 — Final delivery (Week 11)**  
-- [Technical report](docs/assessment-2/ASSESSMENT-2-TECHNICAL-REPORT.md) (also Word in that folder)  
-- [User guide](docs/assessment-2/USER-GUIDE.md)  
-- [UAT checklist](docs/assessment-2/UAT-CHECKLIST.md)  
-- [Week 11 demo script](docs/assessment-2/WEEK-11-DEMO.md)
-
-**Assessment 3 — Poster + reflection (Week 12)**  
-[docs/assessment-3/README.md](docs/assessment-3/README.md) — A3 poster HTML/QR and five individual reflection drafts.
-
-Also: [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
-
----
-
-## What is working in Iteration 1
-
-- Login starts with no session. Fake test accounts for the three roles.
-- Citizen report form (Canberra suburbs, validation, `WST-2026-XXXX` reference). Status goes Submitted → Under Review → Scheduled → Resolved.
-- Smart bin fill status from `getBinStatus()`: 0–49% Normal, 50–79% Moderate, 80–89% Collection Required, 90–100% Critical.
-- Collection priority is a rule based score (fill + urgency + overdue time). Not a black box A.I. approach.
-- Collection sequence only includes Collection Required and Critical bins. **Mark Collected** resets fill to 5%. Only reports linked to that `binId` get resolved.
-- Admin dashboard, live Canberra map (OpenStreetMap), alerts and search all use the same live state.
-- Route Planning draws an OSRM road path from Hume depot through ≥80% bins and back. Stop order is still the priority score, not AI.
-- Maintenance view with simulated sensor faults. **Acknowledge Ticket** then **Mark Resolved**.
-- Vitest tests, ESLint, and GitHub Actions (`ci.yml`) for lint / test / build.
-
----
-
-## How to run it locally (development)
+## How to run locally
 
 Needs Node.js 18+ and npm.
 
 ```bash
 npm install
-npm run demo          # http://localhost:5173/
+npm run demo
+```
+
+Open http://localhost:5173/
+
+```bash
 npm test
 npm run lint
 npm run build
 ```
 
-`npm run dev` is the same server as `npm run demo`.
+---
+
+## What the system does
+
+- Role-based login: Citizen, Collection Staff, Administrator
+- Citizen reports with Canberra suburbs, validation, `WST-2026-XXXX` IDs (Submitted → Under Review → Scheduled → Resolved)
+- Bin status: Normal / Moderate / Collection Required / Critical
+- Rule-based collection priority (not AI)
+- Route planning with map path; **Mark Collected** resets fill to 5%
+- Admin dashboard, Canberra map, alerts, search
+- Maintenance tickets
+- Automated tests and GitHub Actions (lint / test / build / Pages deploy)
+
+---
+
+## Assessment documents
+
+| Assessment | Files |
+|---|---|
+| **1 — Iteration 1 (Week 6)** | [docs/ITERATION-1-REPORT.md](docs/ITERATION-1-REPORT.md) · [docs/DEMO.md](docs/DEMO.md) |
+| **2 — Final delivery (Week 11)** | [Technical report](docs/assessment-2/ASSESSMENT-2-TECHNICAL-REPORT.md) · [User guide](docs/assessment-2/USER-GUIDE.md) · [UAT](docs/assessment-2/UAT-CHECKLIST.md) · [Demo script](docs/assessment-2/WEEK-11-DEMO.md) |
+| **3 — Poster + reflection** | [docs/assessment-3/README.md](docs/assessment-3/README.md) |
 
 ---
 
 ## Team branches
 
 ```text
-main (stable)
+main (stable / GitHub Pages)
 └── develop
     ├── bijay-admin-dashboard
     ├── samir-citizen-interface
@@ -108,25 +85,23 @@ main (stable)
     └── charanpal-maintenance-analytics
 ```
 
-| Member | Branch | What they worked on |
+| Member | Branch | Work |
 |---|---|---|
-| Bijay Pokhrel | `bijay-admin-dashboard` | Admin dashboard, project coordination |
+| Bijay Pokhrel | `bijay-admin-dashboard` | Admin dashboard, coordination |
 | Samir Bhandari | `samir-citizen-interface` | Citizen reporting and validation |
-| Krishna Trivedi | `krishna-database-collection` | Data models, `localStorage`, bin/priority algorithms |
+| Krishna Trivedi | `krishna-database-collection` | Data models, bin/priority logic |
 | Ayush Ale | `ayush-auth-testing` | Login, AppContext, tests |
-| Charanpal Kaur | `charanpal-maintenance-analytics` | Sensor diagnostics and maintenance tickets |
+| Charanpal Kaur | `charanpal-maintenance-analytics` | Maintenance and diagnostics |
 
-Merged PRs: [#1](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/1) Ayush, [#2](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/2) Bijay, [#3](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/3) Samir, [#4](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/4) Krishna, [#5](https://github.com/keinithaxinamalai-art/Smart-waste-management-system/pull/5) develop → main. More detail in [docs/GITHUB-EVIDENCE.md](docs/GITHUB-EVIDENCE.md).
-
-Day to day chat was in Google Chat. GitHub is where the actual code history is.
+Day-to-day chat was in Google Chat. GitHub is the code history.
 
 ---
 
-## Short demo path (if you are marking it)
+## Marker click path
 
-1. Open the app logged out. Login screen should show.
-2. Citizen: submit a Canberra City overflow report, copy the `WST-2026-XXXX` id, see **Submitted**.
-3. Admin: Public Reports → Under Review then Scheduled. Check dashboard / map. `WDN-104` is around 92% (Critical).
-4. Staff: **Mark Collected** on `WDN-104`. Fill goes to 5% (Normal) on map, table and alerts.
-5. Maintenance: **Acknowledge Ticket** on an Open ticket.
+1. Open the live demo logged out.
+2. Citizen: submit an overflow report, copy `WST-2026-XXXX`.
+3. Admin: Public Reports → Under Review → Scheduled. Check dashboard / map.
+4. Staff: **Mark Collected** on a critical bin. Fill goes to ~5%.
+5. Maintenance: acknowledge a ticket.
 6. Admin: **Reset Demo Data**.
