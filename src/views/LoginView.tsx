@@ -70,7 +70,7 @@ export function LoginView({
 
     if (!matchingAccount) {
       setErrorMessage(
-        'Invalid prototype login credentials. Please use admin@smartwaste.demo / DemoAdmin123!, staff@smartwaste.demo / DemoStaff123!, or citizen@smartwaste.demo / DemoCitizen123!.'
+        'Invalid login credentials. Please use admin@smartwaste.demo / DemoAdmin123!, staff@smartwaste.demo / DemoStaff123!, or citizen@smartwaste.demo / DemoCitizen123!.'
       );
       return;
     }
@@ -104,13 +104,13 @@ export function LoginView({
             <Recycle size={36} strokeWidth={2.25} />
           </div>
           <h1>Canberra SmartWaste</h1>
-          <p>TCCS Pilot · Prototype Smart Waste Management System</p>
+          <p>TCCS · ICT308 Final Smart Waste Management System</p>
         </div>
 
         <div className="login-card">
-          <h2>Prototype Sign In</h2>
+          <h2>Sign In</h2>
           <p className="login-card-sub">
-            Select a prototype role account to sign in and access the system.
+            Select a role account to sign in and access the system.
           </p>
 
           {errorMessage && (
@@ -155,7 +155,7 @@ export function LoginView({
 
           <form className="login-form" onSubmit={handleSignIn}>
             <label className="login-field">
-              <span>Prototype Account Email</span>
+              <span>Account Email</span>
               <input
                 type="email"
                 value={email}
@@ -164,7 +164,7 @@ export function LoginView({
               />
             </label>
             <label className="login-field">
-              <span>Prototype Account Password</span>
+              <span>Account Password</span>
               <input
                 type="password"
                 value={password}
@@ -179,7 +179,7 @@ export function LoginView({
           </form>
 
           <div className="login-divider">
-            <span>or 1-click quick demo sign in</span>
+            <span>or 1-click quick sign in</span>
           </div>
 
           <div className="login-quick-actions">
@@ -222,7 +222,7 @@ export function LoginView({
         </div>
 
         <p className="login-footer">
-          Demonstration data & simulated smart-bin sensor monitoring for Iteration 1 prototype.
+          Demonstration data and simulated smart-bin monitoring for ICT308 final delivery.
         </p>
       </div>
     </div>
