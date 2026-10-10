@@ -5,6 +5,14 @@ export interface AppContextValue {
   role: UserRole;
   userName: string;
   userEmail: string;
+  userSuburb: string;
+  registerResident: (input: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    suburb: string;
+  }) => { ok: boolean; error?: string };
   bins: Bin[];
   reports: PublicReport[];
   collections: CollectionRecord[];
@@ -12,7 +20,7 @@ export interface AppContextValue {
   newReportCount: number;
   criticalBinCount: number;
   binsNeedingCollectionCount: number;
-  login: (role: UserRole, name?: string, email?: string) => void;
+  login: (role: UserRole, name?: string, email?: string, suburb?: string) => void;
   logout: () => void;
   submitPublicReport: (
     data: Omit<PublicReport, 'id' | 'status' | 'createdAt'>

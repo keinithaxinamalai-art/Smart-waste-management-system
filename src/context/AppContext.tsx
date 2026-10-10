@@ -21,6 +21,7 @@ import {
 import { fetchBins, checkHealth, collectBin as apiBinCollect, assignCollectionRoute as apiAssignCollectionRoute, resetBackendDemoData } from '../services/api';
 import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
+import { registerResident as createResidentAccount } from '../lib/residentAccounts';
 
 /** Live backend poll interval — 4 seconds */
 const BACKEND_POLL_INTERVAL_MS = 4000;
@@ -40,6 +41,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [userEmail, setUserEmail] = useState<string>(() => {
     return sessionStorage.getItem('swm_user_email') || '';
+  });
+
+  const [userSuburb, setUserSuburb] = useState<string>(() => {
+    return sessionStorage.getItem('swm_user_suburb') || '';
   });
 
   const [bins, setBins] = useState<Bin[]>(() => getStoredBins());
@@ -105,19 +110,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sessionStorage.setItem('swm_user_role', role);
       sessionStorage.setItem('swm_user_name', userName);
       sessionStorage.setItem('swm_user_email', userEmail);
+      sessionStorage.setItem('swm_user_suburb', userSuburb);
     } else {
       sessionStorage.removeItem('swm_user_role');
       sessionStorage.removeItem('swm_user_name');
       sessionStorage.removeItem('swm_user_email');
+      sessionStorage.removeItem('swm_user_suburb');
     }
-  }, [role, userName, userEmail]);
+  }, [role, userName, userEmail, userSuburb]);
 
   const login = useCallback(
-    (r: UserRole, name?: string, email?: string) => {
+    (r: UserRole, name?: string, email?: string, suburb?: string) => {
       if (!r) return;
 
       let defaultName = name;
       let defaultEmail = email;
+      let defaultSuburb = suburb;
 
       if (!defaultName) {
         if (r === 'admin') defaultName = 'TCCS Operations Manager';
@@ -131,17 +139,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
         else defaultEmail = 'citizen@smartwaste.demo';
       }
 
+      if (!defaultSuburb) {
+        if (r === 'admin') defaultSuburb = 'Civic';
+        else if (r === 'staff') defaultSuburb = 'Belconnen';
+        else defaultSuburb = 'Canberra City';
+      }
+
       setRole(r);
       setUserName(defaultName);
       setUserEmail(defaultEmail);
+      setUserSuburb(defaultSuburb);
     },
     []
+  );
+
+  const registerResident = useCallback(
+    (input: {
+      name: string;
+      email: string;
+      password: string;
+      confirmPassword: string;
+      suburb: string;
+    }) => {
+      const result = createResidentAccount(input);
+      if (result.ok && result.user) {
+        login(result.user.role, result.user.name, result.user.email, result.user.suburb);
+      }
+      return { ok: result.ok, error: result.error };
+    },
+    [login]
   );
 
   const logout = useCallback(() => {
     setRole(null);
     setUserName('');
     setUserEmail('');
+    setUserSuburb('');
     sessionStorage.clear();
   }, []);
 
@@ -260,6 +293,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role,
       userName,
       userEmail,
+      userSuburb,
+      registerResident,
       bins,
       reports,
       collections,
@@ -281,6 +316,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role,
       userName,
       userEmail,
+      userSuburb,
+      registerResident,
       bins,
       reports,
       collections,

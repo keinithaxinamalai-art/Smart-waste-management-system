@@ -4,7 +4,7 @@ ICT308 – Project 2 (BIT Capstone) · **Assessment 2 Final Delivery**
 
 **Group:** Bijay Pokhrel, Samir Bhandari, Krishna Trivedi, Ayush Ale, Charanpal Kaur
 
-Canberra SmartWaste is a smart waste operations system for ACT Government / TCCS. Citizens report waste issues, collection staff complete pickups, and administrators monitor bins, routes, alerts and maintenance.
+Canberra SmartWaste is a smart waste operations system for Transport Canberra and City Services (TCCS). Residents can create an account, report waste issues and track status. Collection staff complete pickups, and administrators monitor bins, routes, alerts and maintenance.
 
 **Live site (GitHub Pages):**  
 https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
@@ -27,7 +27,9 @@ The Pages site is the React frontend. Express + SQLite + MQTT run locally (`npm 
 | Collection Staff | `staff@smartwaste.demo` | `DemoStaff123!` |
 | Citizen | `citizen@smartwaste.demo` | `DemoCitizen123!` |
 
-Public users can also click **Report a Full Bin** with no account.
+Create a new resident account from **Create a resident account** (name, email, password, confirm password, suburb). That account stays in this browser so you can sign in after refresh.
+
+Staff accounts above still work. Guests can also click **Report a waste issue** with no account.
 
 ---
 

@@ -22,13 +22,21 @@ const isStorageAvailable = typeof localStorage !== 'undefined';
 
 export const CANBERRA_SUBURBS = [
   'Canberra City',
+  'Civic',
+  'Braddon',
   'Belconnen',
   'Gungahlin',
   'Woden',
+  'Weston Creek',
   'Tuggeranong',
   'Dickson',
   'Kingston',
   'Manuka',
+  'Fyshwick',
+  'Harrison',
+  'Casey',
+  'Ngunnawal',
+  'Kambah',
 ] as const;
 
 export const INITIAL_BINS: Bin[] = [

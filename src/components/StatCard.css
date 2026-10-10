@@ -12,7 +12,9 @@
 }
 
 .stat-card {
-  background: #fff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), #fff),
+    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.1), transparent 46%);
   border-radius: var(--radius);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow);
@@ -20,7 +22,7 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .stat-card:hover {
@@ -28,15 +30,16 @@
 }
 
 .stat-card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: var(--green-50);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #ccfbf1, #f0fdfa);
   color: var(--green-800);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(13, 92, 75, 0.08);
 }
 
 .stat-card--alert .stat-card-icon {

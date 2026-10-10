@@ -31,7 +31,7 @@ export function PublicReportView({
   demoSuccessId,
   variant = 'embedded',
 }: PublicReportViewProps) {
-  const { submitPublicReport, reports } = useApp();
+  const { submitPublicReport, reports, userName, userEmail, userSuburb } = useApp();
   const [tab, setTab] = useState<'new' | 'history'>('new');
   const [submittedId, setSubmittedId] = useState<string | null>(demoSuccessId ?? null);
   const [locating, setLocating] = useState(false);
@@ -40,13 +40,13 @@ export function PublicReportView({
 
   const [issue, setIssue] = useState<ReportIssue>('overflow');
   const [location, setLocation] = useState('');
-  const [suburb, setSuburb] = useState<string>('Canberra City');
+  const [suburb, setSuburb] = useState<string>(userSuburb || 'Canberra City');
   const [urgency, setUrgency] = useState<ReportUrgency>('Medium');
   const [wasteType, setWasteType] = useState<WasteType>('General');
   const [binId, setBinId] = useState('');
   const [description, setDescription] = useState('');
-  const [reporterName, setReporterName] = useState('');
-  const [reporterEmail, setReporterEmail] = useState('');
+  const [reporterName, setReporterName] = useState(userName);
+  const [reporterEmail, setReporterEmail] = useState(userEmail);
   const [photoAttached, setPhotoAttached] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -104,7 +104,11 @@ export function PublicReportView({
     setSubmittedId(report.id);
   };
 
-  const filteredHistory = reports.filter(
+  const mine = userEmail
+    ? reports.filter((r) => r.reporterEmail?.toLowerCase() === userEmail.toLowerCase())
+    : reports;
+
+  const filteredHistory = mine.filter(
     (r) =>
       !searchRef ||
       r.id.toLowerCase().includes(searchRef.toLowerCase()) ||
@@ -119,11 +123,24 @@ export function PublicReportView({
           <div className="public-success-icon">
             <CheckCircle2 size={48} />
           </div>
-          <h1>Report Submitted Successfully</h1>
-          <p>Thank you for keeping Canberra clean! TCCS operations team has received your report.</p>
+          <h1>Report received</h1>
+          <p>
+            TCCS operations will review this shortly. Keep this on-screen receipt — this portal does
+            not send confirmation emails.
+          </p>
           <div className="public-ref">
             <span>Reference ID</span>
             <strong>{submittedId}</strong>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ marginTop: '0.75rem' }}
+              onClick={() => {
+                void navigator.clipboard.writeText(submittedId);
+              }}
+            >
+              Copy reference
+            </button>
           </div>
           <p style={{ fontSize: '0.85rem', color: '#555', marginTop: '0.5rem' }}>
             Status: <span className="status-pill status-submitted">Submitted</span> — In Queue for TCCS Inspection
@@ -180,16 +197,16 @@ export function PublicReportView({
             className={`tab-btn ${tab === 'history' ? 'active' : ''}`}
             onClick={() => setTab('history')}
           >
-            <FileText size={16} /> Track Reports ({reports.length})
+            <FileText size={16} /> Track Reports ({mine.length})
           </button>
         </div>
 
         {tab === 'new' ? (
           <>
             <div className="public-intro">
-              <h1>Report a Waste Issue</h1>
+              <h1>Report a waste issue</h1>
               <p>
-                Spotted an overflowing bin or illegal dumping in ACT? Submit a report directly to TCCS Operations.
+                Spotted an overflowing bin or illegal dumping in Canberra? Submit a report to TCCS operations and keep the on-screen receipt.
               </p>
             </div>
 

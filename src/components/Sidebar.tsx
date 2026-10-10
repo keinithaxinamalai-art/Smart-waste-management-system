@@ -87,7 +87,7 @@ export function Sidebar({ active, onNavigate, onPublicReport, mobileOpen, onClos
       )}
 
       <div className="sidebar-footer">
-        <div className="pilot-badge">ACT Government</div>
+        <div className="pilot-badge">TCCS operations</div>
         <p className="sidebar-footer-text">Transport Canberra and City Services</p>
       </div>
     </aside>

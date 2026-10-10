@@ -23,6 +23,7 @@ interface HeaderProps {
 export function Header({ onLogout, onMenuToggle }: HeaderProps) {
   const {
     userName,
+    userSuburb,
     role,
     bins,
     reports,
@@ -341,7 +342,10 @@ export function Header({ onLogout, onMenuToggle }: HeaderProps) {
           </div>
           <div className="header-user-info">
             <span className="header-user-name">{userName}</span>
-            <span className="header-user-role">{displayRoleLabel}</span>
+            <span className="header-user-role">
+              {displayRoleLabel}
+              {userSuburb ? ` · ${userSuburb}` : ''}
+            </span>
           </div>
         </div>
       </div>
