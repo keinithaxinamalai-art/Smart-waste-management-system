@@ -18,8 +18,8 @@ export function LoginView({
 }: LoginViewProps) {
   const { login } = useApp();
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'citizen'>('admin');
-  const [email, setEmail] = useState('admin@smartwaste.demo');
-  const [password, setPassword] = useState('DemoAdmin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const DEMO_ACCOUNTS = [
@@ -28,8 +28,8 @@ export function LoginView({
       title: 'Administrator',
       email: 'admin@smartwaste.demo',
       pass: 'DemoAdmin123!',
-      name: 'Bijay Pokhrel',
-      desc: 'System oversight, statistics, priority management & report administration',
+      name: 'Operations Manager',
+      desc: 'Network monitoring, collection priority and public report administration',
       icon: Shield,
     },
     {
@@ -37,8 +37,8 @@ export function LoginView({
       title: 'Collection Staff',
       email: 'staff@smartwaste.demo',
       pass: 'DemoStaff123!',
-      name: 'Route Driver 1 (Krishna / Samir)',
-      desc: 'Priority collection queue, bin pickup & route execution',
+      name: 'Collection Officer',
+      desc: 'Assigned collection stops, bin pickup and route execution',
       icon: Truck,
     },
     {
@@ -46,8 +46,8 @@ export function LoginView({
       title: 'Citizen',
       email: 'citizen@smartwaste.demo',
       pass: 'DemoCitizen123!',
-      name: 'Canberra Resident (Ayush A. / Charanpal K.)',
-      desc: 'Report waste issues, track report status & view personal report history',
+      name: 'Canberra Resident',
+      desc: 'Report waste issues and track request status',
       icon: User,
     },
   ];
@@ -70,7 +70,7 @@ export function LoginView({
 
     if (!matchingAccount) {
       setErrorMessage(
-        'Invalid login credentials. Please use admin@smartwaste.demo / DemoAdmin123!, staff@smartwaste.demo / DemoStaff123!, or citizen@smartwaste.demo / DemoCitizen123!.'
+        'Email or password is incorrect. Check your details and try again.'
       );
       return;
     }
@@ -97,6 +97,7 @@ export function LoginView({
 
   return (
     <div className="login-page">
+      <div className="login-official-bar">ACT Government · Transport Canberra and City Services</div>
       <div className="login-bg" aria-hidden />
       <div className="login-container">
         <div className="login-brand">
@@ -104,13 +105,13 @@ export function LoginView({
             <Recycle size={36} strokeWidth={2.25} />
           </div>
           <h1>Canberra SmartWaste</h1>
-          <p>TCCS · ICT308 Final Smart Waste Management System</p>
+          <p>Transport Canberra and City Services</p>
         </div>
 
         <div className="login-card">
           <h2>Sign In</h2>
           <p className="login-card-sub">
-            Select a role account to sign in and access the system.
+            Sign in with your operations, collection or resident account.
           </p>
 
           {errorMessage && (
@@ -179,7 +180,7 @@ export function LoginView({
           </form>
 
           <div className="login-divider">
-            <span>or 1-click quick sign in</span>
+            <span>or sign in as</span>
           </div>
 
           <div className="login-quick-actions">
@@ -207,7 +208,7 @@ export function LoginView({
           </div>
 
           <div className="login-divider">
-            <span>or anonymous public reporting</span>
+            <span>or report without signing in</span>
           </div>
 
           <button
@@ -216,13 +217,13 @@ export function LoginView({
             onClick={onPublicReport}
           >
             <Recycle size={20} />
-            Report a Full Bin (Public)
+            Report a waste issue
             <span className="login-btn-hint">No account required</span>
           </button>
         </div>
 
         <p className="login-footer">
-          Demonstration data and simulated smart-bin monitoring for ICT308 final delivery.
+          ACT Government · Transport Canberra and City Services
         </p>
       </div>
     </div>

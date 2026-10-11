@@ -6,7 +6,7 @@ ICT308 – Project 2 (BIT Capstone) · **Assessment 2 Final Delivery**
 
 Canberra SmartWaste is a smart waste operations system for ACT Government / TCCS. Citizens report waste issues, collection staff complete pickups, and administrators monitor bins, routes, alerts and maintenance.
 
-**Live demo (GitHub Pages):**  
+**Live site (GitHub Pages):**  
 https://keinithaxinamalai-art.github.io/Smart-waste-management-system/
 
 **Repository:**  
@@ -15,11 +15,11 @@ https://github.com/keinithaxinamalai-art/Smart-waste-management-system
 **Jira:**  
 https://student-team-frnx73gf.atlassian.net/jira/software/projects/SMAR
 
-The Pages site is the React frontend. Express + SQLite + MQTT run locally (`npm run demo` plus the backend if you use the full stack). Bin telemetry on Pages is demonstration data.
+The Pages site is the React frontend. Express + SQLite + MQTT run locally (`npm run demo` plus the backend if you use the full stack).
 
 ---
 
-## Demo logins
+## Portal logins
 
 | Role | Email | Password |
 |---|---|---|

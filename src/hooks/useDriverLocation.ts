@@ -6,7 +6,7 @@
  * the API is unavailable.
  *
  * Fallback location: Canberra Civic (-35.2809, 149.1300)
- * This is consistent with the demo suburb "Canberra City" already used
+ * This is consistent with the Canberra City suburb already used
  * in the project's bin data.
  */
 
@@ -61,8 +61,8 @@ export function useDriverLocation(): DriverLocationState {
         source: 'fallback',
         errorMsg:
           err.code === err.PERMISSION_DENIED
-            ? 'Location permission denied — using Canberra Civic demo location.'
-            : 'Unable to determine GPS location — using Canberra Civic demo location.',
+            ? 'Location permission denied — using Canberra Civic as the start location.'
+            : 'Unable to determine GPS location — using Canberra Civic as the start location.',
       });
     };
 

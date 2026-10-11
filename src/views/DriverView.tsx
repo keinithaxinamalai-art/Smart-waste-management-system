@@ -61,7 +61,7 @@ export function DriverView({ onLogout }: DriverViewProps) {
         {locationSource === 'gps' ? <Navigation size={14} /> : <MapPin size={14} />}
         {locationSource === 'gps'
           ? `GPS Active — Route from ${driverLocation.lat.toFixed(3)}°, ${driverLocation.lng.toFixed(3)}°`
-          : 'Demo Mode — Canberra Civic fallback location'}
+          : 'Using Canberra Civic as the start location'}
       </div>
 
       {successMsg && (

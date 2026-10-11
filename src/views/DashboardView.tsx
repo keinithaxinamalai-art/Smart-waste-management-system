@@ -62,10 +62,10 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
     <>
       <div className="page-header page-header--row">
         <div>
-          <h1>TCCS Administrator Operations Dashboard</h1>
-          <p>Canberra SmartWaste Management System — Territory & Municipal Services</p>
+          <h1>Operations dashboard</h1>
+          <p>Canberra SmartWaste — Transport Canberra and City Services</p>
         </div>
-        <span className="live-pill">Simulated Telemetry · ACT Prototype Grid Active</span>
+        <span className="live-pill">Live network</span>
       </div>
 
       {newReportCount > 0 && (
@@ -176,7 +176,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-header">
-            <h2>Prototype Smart-Bin Telemetry Map</h2>
+            <h2>Canberra bin map</h2>
             <button
               type="button"
               className="btn btn-secondary"

@@ -58,7 +58,7 @@ export function RoutesView() {
           <>
             <MapPin size={16} />
             <span>
-              <strong>Demo Location — Canberra Civic</strong>
+              <strong>Start location — Canberra Civic</strong>
               {locationError ? ` (${locationError})` : ' — GPS unavailable'}
             </span>
           </>
@@ -179,7 +179,7 @@ export function RoutesView() {
               <span className="route-summary-value">Location-Aware</span>
               <span className="route-summary-label">
                 Nearest-neighbour optimisation from{' '}
-                {locationSource === 'gps' ? 'your GPS position' : 'Canberra Civic (demo fallback)'}
+                {locationSource === 'gps' ? 'your GPS position' : 'Canberra Civic'}
               </span>
             </div>
             {sequence.length > 0 && (

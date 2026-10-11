@@ -54,8 +54,7 @@ export function MaintenanceView() {
       <div className="page-header">
         <h1>Smart Bin Maintenance & Sensor Diagnostics</h1>
         <p>
-          Simulated sensor errors, low-battery alerts, and lid mechanism jams with technician
-          work orders from Open to In Progress and Resolved
+          Sensor faults, battery alerts and lid faults, with work orders from Open to In Progress and Resolved
         </p>
       </div>
 

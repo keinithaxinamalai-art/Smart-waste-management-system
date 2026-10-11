@@ -7,7 +7,6 @@ import {
   LogOut,
   Menu,
   Recycle,
-  RefreshCw,
   Search,
   Truck,
   User,
@@ -30,23 +29,12 @@ export function Header({ onLogout, onMenuToggle }: HeaderProps) {
     collections,
     newReportCount,
     criticalBinCount,
-    resetAllDemoData,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
   const notifCount = criticalBinCount + newReportCount;
-
-  const handleResetDemoData = () => {
-    const confirmed = window.confirm(
-      'Reset Demo Data?\n\nThis will restore default seeded bins, reports, collections, and maintenance tickets for demonstration testing.'
-    );
-    if (confirmed) {
-      resetAllDemoData();
-      alert('Demo data has been restored to default seed state.');
-    }
-  };
 
   const displayRoleLabel = role ? ROLE_LABELS[role] ?? 'User' : 'Guest';
 
@@ -260,18 +248,6 @@ export function Header({ onLogout, onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="header-actions">
-        {role === 'admin' && (
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', gap: '0.35rem' }}
-            onClick={handleResetDemoData}
-            title="Reset Demo Data to Seed State"
-          >
-            <RefreshCw size={14} /> Reset Demo Data
-          </button>
-        )}
-
         {/* Interactive Notification Bell Dropdown */}
         <div style={{ position: 'relative' }}>
           <button

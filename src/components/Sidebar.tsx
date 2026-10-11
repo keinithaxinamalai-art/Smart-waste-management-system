@@ -82,13 +82,13 @@ export function Sidebar({ active, onNavigate, onPublicReport, mobileOpen, onClos
 
       {onPublicReport && (
         <button type="button" className="sidebar-public-cta" onClick={onPublicReport}>
-          Report a bin (public)
+          Report a waste issue
         </button>
       )}
 
       <div className="sidebar-footer">
-        <div className="pilot-badge">Pilot Program</div>
-        <p className="sidebar-footer-text">Territory & Municipal Services</p>
+        <div className="pilot-badge">ACT Government</div>
+        <p className="sidebar-footer-text">Transport Canberra and City Services</p>
       </div>
     </aside>
     </>
