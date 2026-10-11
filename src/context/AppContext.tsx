@@ -15,10 +15,25 @@ import {
   getStoredTickets,
   resetDemoData,
   saveStoredBins,
+  saveStoredCollections,
   saveStoredReports,
+  saveStoredTickets,
   updateMaintenanceTicketStatus,
 } from '../services/dataStore';
-import { fetchBins, checkHealth, collectBin as apiBinCollect, assignCollectionRoute as apiAssignCollectionRoute, resetBackendDemoData, registerCitizenAccount } from '../services/api';
+import {
+  fetchBins,
+  fetchCollections,
+  fetchReports,
+  fetchTickets,
+  checkHealth,
+  collectBin as apiBinCollect,
+  assignCollectionRoute as apiAssignCollectionRoute,
+  createReport as apiCreateReport,
+  patchReportStatus as apiPatchReportStatus,
+  patchTicketStatus as apiPatchTicketStatus,
+  resetBackendDemoData,
+  registerCitizenAccount,
+} from '../services/api';
 import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
 import { registerResident as createResidentAccount } from '../lib/residentAccounts';
@@ -62,47 +77,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTickets(getStoredTickets());
   }, []);
 
-  // ── Backend polling ───────────────────────────────────────────────────────
-  // When the backend is running, poll every 4 seconds to pick up MQTT telemetry.
+  // ── Backend sync ──────────────────────────────────────────────────────────
+  // When the SQLite backend is running, it is the source of truth: load every
+  // table on connect and poll every 4 seconds (MQTT telemetry, other sessions).
   // Falls back to localStorage silently if the backend is unavailable.
+  const syncFromBackend = useCallback(async () => {
+    const [apiBins, apiReports, apiCollections, apiTickets] = await Promise.allSettled([
+      fetchBins(),
+      fetchReports(),
+      fetchCollections(),
+      fetchTickets(),
+    ]);
+    if (apiBins.status === 'fulfilled' && apiBins.value.length > 0) {
+      setBins(apiBins.value);
+      saveStoredBins(apiBins.value);
+    }
+    if (apiReports.status === 'fulfilled') {
+      const normalized = apiReports.value.map((r) => ({
+        ...r,
+        status: normalizeReportStatus(r.status),
+      }));
+      setReports(normalized);
+      saveStoredReports(normalized);
+    }
+    if (apiCollections.status === 'fulfilled') {
+      setCollections(apiCollections.value);
+      saveStoredCollections(apiCollections.value);
+    }
+    if (apiTickets.status === 'fulfilled') {
+      setTickets(apiTickets.value);
+      saveStoredTickets(apiTickets.value);
+    }
+  }, []);
+
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
 
     const startPolling = async () => {
       const healthy = await checkHealth();
+      if (cancelled) return;
       setBackendAvailable(healthy);
-
       if (!healthy) return;
 
-      // Immediately load bins from database on connect
-      try {
-        const apiBins = await fetchBins();
-        if (apiBins.length > 0) {
-          setBins(apiBins);
-          saveStoredBins(apiBins); // Keep localStorage in sync
-        }
-      } catch { /* backend went away */ }
-
-      // Poll for live MQTT telemetry updates
-      intervalId = setInterval(async () => {
-        try {
-          const apiBins = await fetchBins();
-          if (apiBins.length > 0) {
-            setBins(apiBins);
-            saveStoredBins(apiBins);
-          }
-        } catch {
-          // Backend unavailable — continue using in-memory state
-        }
+      await syncFromBackend();
+      intervalId = setInterval(() => {
+        syncFromBackend().catch(() => { /* keep in-memory state */ });
       }, BACKEND_POLL_INTERVAL_MS);
     };
 
     startPolling();
 
     return () => {
+      cancelled = true;
       if (intervalId) clearInterval(intervalId);
     };
-  }, []);
+  }, [syncFromBackend]);
   // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -227,9 +257,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setBins(updatedBins);
       }
 
+      if (backendAvailable) {
+        apiCreateReport(newReport).catch(() => { /* retain local copy */ });
+      }
+
       return newReport;
     },
-    [role, userEmail]
+    [role, userEmail, backendAvailable]
   );
 
   const setReportStatus = useCallback((id: string, status: ReportStatus) => {
@@ -238,7 +272,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updated = current.map((r) => (r.id === id ? { ...r, status: normalized } : r));
     saveStoredReports(updated);
     setReports(updated);
-  }, []);
+    if (backendAvailable) {
+      apiPatchReportStatus(id, normalized).catch(() => { /* retain local fallback */ });
+    }
+  }, [backendAvailable]);
 
   const triggerCollection = useCallback((binId: string) => {
     // Always apply local collection logic so UI remains responsive
@@ -250,27 +287,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (backendAvailable) {
       apiBinCollect(binId)
-        .then(() => fetchBins())
-        .then((freshBins) => {
-          setBins(freshBins);
-          saveStoredBins(freshBins);
-        })
+        .then(() => syncFromBackend())
         .catch(() => { /* retain the responsive local fallback */ });
     }
-  }, [backendAvailable]);
+  }, [backendAvailable, syncFromBackend]);
 
   const assignRoute = useCallback((driverName?: string) => {
     const updatedCollections = assignCollectionRoute(driverName);
     setCollections(updatedCollections);
     if (backendAvailable) {
-      apiAssignCollectionRoute(driverName).catch(() => { /* retain local fallback */ });
+      apiAssignCollectionRoute(driverName)
+        .then(() => syncFromBackend())
+        .catch(() => { /* retain local fallback */ });
     }
-  }, [backendAvailable]);
+  }, [backendAvailable, syncFromBackend]);
 
   const setTicketStatus = useCallback((id: string, status: TicketStatus) => {
     const updated = updateMaintenanceTicketStatus(id, status);
     setTickets(updated);
-  }, []);
+    if (backendAvailable) {
+      apiPatchTicketStatus(id, status).catch(() => { /* retain local fallback */ });
+    }
+  }, [backendAvailable]);
 
   const resetAllDemoData = useCallback(() => {
     const fresh = resetDemoData();
@@ -280,14 +318,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTickets(fresh.tickets);
     if (backendAvailable) {
       resetBackendDemoData()
-        .then(() => fetchBins())
-        .then((freshBins) => {
-          setBins(freshBins);
-          saveStoredBins(freshBins);
-        })
+        .then(() => syncFromBackend())
         .catch(() => { /* retain local fallback */ });
     }
-  }, [backendAvailable]);
+  }, [backendAvailable, syncFromBackend]);
 
   const newReportCount = useMemo(
     () => reports.filter((r) => r.status === 'Submitted').length,

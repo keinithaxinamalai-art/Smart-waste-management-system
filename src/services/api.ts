@@ -9,7 +9,14 @@
  * defaulting to http://localhost:3001 only when the site itself runs on localhost.
  */
 
-import type { Bin, CollectionRecord } from '../types';
+import type {
+  Bin,
+  CollectionRecord,
+  MaintenanceTicket,
+  PublicReport,
+  ReportStatus,
+  TicketStatus,
+} from '../types';
 
 const REQUEST_TIMEOUT_MS = 1500;
 

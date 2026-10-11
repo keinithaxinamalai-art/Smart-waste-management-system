@@ -166,6 +166,18 @@ db.exec(`
   );
 `);
 
+/** Adds a column to an existing table only when it is missing (keeps older smartwaste.db files working). */
+function ensureColumn(table, column, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!columns.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    console.log(`[db] Added ${table}.${column}`);
+  }
+}
+
+ensureColumn('public_reports', 'account_email', 'TEXT');
+ensureColumn('public_reports', 'updated_at', 'TEXT');
+
 const INITIAL_BINS = [
   { id: 'WDN-104', location: 'Weston Creek — Park St', suburb: 'Woden', fill_level: 92, waste_type: 'General', sensor_status: 'Online', last_collected: '2026-08-21T14:30:00Z', lat: -35.352, lng: 149.083 },
   { id: 'BEL-022', location: 'Belconnen — Cohen St Bus Interchange', suburb: 'Belconnen', fill_level: 84, waste_type: 'Recyclable', sensor_status: 'Online', last_collected: '2026-08-22T06:00:00Z', lat: -35.238, lng: 149.064 },
@@ -334,7 +346,25 @@ export const stmts = {
   `),
   deleteUserByEmail: named('DELETE FROM users WHERE lower(email) = lower(?)'),
   getAllReports: named('SELECT * FROM public_reports ORDER BY created_at DESC'),
+  getReportById: named('SELECT * FROM public_reports WHERE id = ?'),
+  insertReport: named(`
+    INSERT INTO public_reports (id, issue, issue_label, location, suburb, description, urgency, waste_type, bin_id,
+      reporter_name, reporter_email, account_email, photo_attached, status, created_at, updated_at, lat, lng)
+    VALUES ($id, $issue, $issue_label, $location, $suburb, $description, $urgency, $waste_type, $bin_id,
+      $reporter_name, $reporter_email, $account_email, $photo_attached, $status, $created_at, $updated_at, $lat, $lng)
+  `),
+  updateReportStatus: named(`
+    UPDATE public_reports SET status=$status, updated_at=$updated_at WHERE id=$id
+  `),
+  bumpBinPriority: named(`
+    UPDATE bins SET priority_score=$priority_score, collection_priority=$collection_priority, updated_at=$updated_at
+    WHERE id=$id
+  `),
   getAllTickets: named('SELECT * FROM maintenance_tickets ORDER BY created_at DESC'),
+  getTicketById: named('SELECT * FROM maintenance_tickets WHERE id = ?'),
+  updateTicketStatus: named(`
+    UPDATE maintenance_tickets SET status=$status, updated_at=$updated_at WHERE id=$id
+  `),
 };
 
 console.log(`[db] SQLite database ready at ${DB_PATH}`);

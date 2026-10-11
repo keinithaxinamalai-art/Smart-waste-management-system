@@ -12,6 +12,11 @@
  *   POST  /api/bins/:id/collect
  *   GET  /api/collections
  *   POST /api/routes/assign
+ *   GET  /api/reports
+ *   POST /api/reports
+ *   PATCH /api/reports/:id
+ *   GET  /api/tickets
+ *   PATCH /api/tickets/:id
  *   GET  /api/users
  *   POST /api/login
  *   POST /api/register
@@ -237,9 +242,148 @@ app.get('/api/collections', (_req, res) => {
 
 app.post('/api/routes/assign', (req, res) => {
   const driver = req.body?.driver || 'Route Driver 1 (ACT-TRK-04)';
-  stmts.assignRoutePending.run({ driver });
-  const rows = stmts.getAllCollections.all();
-  res.json({ success: true, updated: rows.length });
+  const result = stmts.assignRoutePending.run({ driver });
+  res.json({ success: true, updated: Number(result?.changes ?? 0) });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Public reports
+// ────────────────────────────────────────────────────────────────────────────
+
+const REPORT_STATUSES = ['Submitted', 'Under Review', 'Scheduled', 'Resolved'];
+const REPORT_URGENCIES = ['Low', 'Medium', 'High', 'Critical'];
+const TICKET_STATUSES = ['Open', 'In Progress', 'Resolved'];
+
+function rowToFrontendReport(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    issue: row.issue,
+    issueLabel: row.issue_label ?? undefined,
+    location: row.location,
+    suburb: row.suburb,
+    description: row.description ?? '',
+    urgency: row.urgency,
+    wasteType: row.waste_type ?? undefined,
+    binId: row.bin_id ?? undefined,
+    reporterName: row.reporter_name ?? undefined,
+    reporterEmail: row.reporter_email ?? undefined,
+    accountEmail: row.account_email ?? undefined,
+    photoAttached: Boolean(row.photo_attached),
+    status: row.status,
+    createdAt: row.created_at,
+    lat: row.lat ?? undefined,
+    lng: row.lng ?? undefined,
+  };
+}
+
+function optionalText(value) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  return text || null;
+}
+
+app.get('/api/reports', (_req, res) => {
+  res.json(stmts.getAllReports.all().map(rowToFrontendReport));
+});
+
+app.post('/api/reports', (req, res) => {
+  const body = req.body ?? {};
+  const location = optionalText(body.location);
+  const suburb = optionalText(body.suburb);
+  const issue = optionalText(body.issue);
+  if (!location || !suburb || !issue) {
+    return res.status(400).json({ error: 'Issue, location and suburb are required.' });
+  }
+
+  let id = optionalText(body.id);
+  if (!id || stmts.getReportById.get(id)) {
+    id = `WST-2026-${Date.now().toString().slice(-6)}`;
+  }
+  const now = new Date().toISOString();
+  const binId = optionalText(body.binId);
+  const urgency = REPORT_URGENCIES.includes(body.urgency) ? body.urgency : 'Medium';
+
+  stmts.insertReport.run({
+    id,
+    issue,
+    issue_label: optionalText(body.issueLabel),
+    location,
+    suburb,
+    description: optionalText(body.description) ?? '',
+    urgency,
+    waste_type: optionalText(body.wasteType),
+    bin_id: binId,
+    reporter_name: optionalText(body.reporterName),
+    reporter_email: optionalText(body.reporterEmail)?.toLowerCase() ?? null,
+    account_email: optionalText(body.accountEmail)?.toLowerCase() ?? null,
+    photo_attached: body.photoAttached ? 1 : 0,
+    status: 'Submitted',
+    created_at: optionalText(body.createdAt) ?? now,
+    updated_at: now,
+    lat: Number.isFinite(body.lat) ? body.lat : null,
+    lng: Number.isFinite(body.lng) ? body.lng : null,
+  });
+
+  // Mirrors submitPublicReport in AppContext: a report raises the linked bin's priority.
+  if (binId) {
+    const bin = stmts.getBinById.get(binId);
+    if (bin) {
+      const nextScore = Math.min(100, Number(bin.priority_score) + 15);
+      stmts.bumpBinPriority.run({
+        id: binId,
+        priority_score: nextScore,
+        collection_priority: nextScore >= 80 ? 'Critical' : 'High',
+        updated_at: now,
+      });
+    }
+  }
+
+  res.status(201).json(rowToFrontendReport(stmts.getReportById.get(id)));
+});
+
+app.patch('/api/reports/:id', (req, res) => {
+  const row = stmts.getReportById.get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Report not found' });
+  const status = req.body?.status;
+  if (!REPORT_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${REPORT_STATUSES.join(', ')}` });
+  }
+  stmts.updateReportStatus.run({ id: req.params.id, status, updated_at: new Date().toISOString() });
+  res.json(rowToFrontendReport(stmts.getReportById.get(req.params.id)));
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Maintenance tickets
+// ────────────────────────────────────────────────────────────────────────────
+
+function rowToFrontendTicket(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    binId: row.bin_id,
+    location: row.location,
+    suburb: row.suburb,
+    faultType: row.fault_type,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    notes: row.notes ?? undefined,
+  };
+}
+
+app.get('/api/tickets', (_req, res) => {
+  res.json(stmts.getAllTickets.all().map(rowToFrontendTicket));
+});
+
+app.patch('/api/tickets/:id', (req, res) => {
+  const row = stmts.getTicketById.get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Ticket not found' });
+  const status = req.body?.status;
+  if (!TICKET_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${TICKET_STATUSES.join(', ')}` });
+  }
+  stmts.updateTicketStatus.run({ id: req.params.id, status, updated_at: new Date().toISOString() });
+  res.json(rowToFrontendTicket(stmts.getTicketById.get(req.params.id)));
 });
 
 // ────────────────────────────────────────────────────────────────────────────
