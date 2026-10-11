@@ -200,6 +200,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const refId = generateReportId(existingIds);
       const newReport: PublicReport = {
         ...data,
+        accountEmail: role === 'citizen' && userEmail ? userEmail.toLowerCase() : undefined,
         id: refId,
         status: 'Submitted',
         createdAt: new Date().toISOString(),
@@ -228,7 +229,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       return newReport;
     },
-    []
+    [role, userEmail]
   );
 
   const setReportStatus = useCallback((id: string, status: ReportStatus) => {

@@ -59,6 +59,8 @@ export interface PublicReport {
   binId?: string;
   reporterName?: string;
   reporterEmail?: string;
+  /** Email of the signed-in resident account that submitted the report */
+  accountEmail?: string;
   photoAttached: boolean;
   status: ReportStatus;
   createdAt: string;

@@ -7,7 +7,6 @@ import {
   Truck,
   Recycle,
   Users,
-  Database,
 } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
 
@@ -18,8 +17,7 @@ export type NavId =
   | 'maintenance'
   | 'reports'
   | 'map'
-  | 'public-reports'
-  | 'database';
+  | 'public-reports';
 
 interface SidebarProps {
   active: NavId;
@@ -37,7 +35,6 @@ const navItems: { id: NavId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'driver', label: 'Driver View', icon: Truck },
   { id: 'maintenance', label: 'Maintenance', icon: Wrench },
   { id: 'reports', label: 'Reports & KPIs', icon: FileBarChart },
-  { id: 'database', label: 'Database', icon: Database },
 ];
 
 export function Sidebar({ active, onNavigate, onPublicReport, mobileOpen, onClose }: SidebarProps) {

@@ -6,21 +6,53 @@
  * caller can fall back to localStorage state.
  *
  * Base URL is controlled via VITE_API_URL environment variable,
- * defaulting to http://localhost:3001 for local development.
+ * defaulting to http://localhost:3001 only when the site itself runs on localhost.
  */
 
 import type { Bin, CollectionRecord } from '../types';
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
+const REQUEST_TIMEOUT_MS = 1500;
+
+function isLocalHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+}
+
+/**
+ * Public hosts (e.g. GitHub Pages) must never call http://localhost:3001 —
+ * Chrome's local network access checks block or prompt for those requests.
+ */
+function resolveBaseUrl(): string | null {
+  const configured = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  return isLocalHost() ? 'http://localhost:3001' : null;
+}
+
+const BASE_URL = resolveBaseUrl();
+
+export function isApiConfigured(): boolean {
+  return BASE_URL !== null;
+}
 
 async function safeFetch<T>(input: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${input}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  });
+  if (!BASE_URL) throw new Error('API not configured');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${input}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const text = await res.text();
     try {
@@ -82,6 +114,40 @@ export async function assignCollectionRoute(driver?: string): Promise<{ success:
   });
 }
 
+/** Fetch all public waste reports */
+export async function fetchReports(): Promise<PublicReport[]> {
+  return safeFetch<PublicReport[]>('/api/reports');
+}
+
+/** Save a newly submitted public report */
+export async function createReport(report: PublicReport): Promise<PublicReport> {
+  return safeFetch<PublicReport>('/api/reports', {
+    method: 'POST',
+    body: JSON.stringify(report),
+  });
+}
+
+/** Update a public report's status */
+export async function patchReportStatus(id: string, status: ReportStatus): Promise<PublicReport> {
+  return safeFetch<PublicReport>(`/api/reports/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** Fetch all maintenance tickets */
+export async function fetchTickets(): Promise<MaintenanceTicket[]> {
+  return safeFetch<MaintenanceTicket[]>('/api/tickets');
+}
+
+/** Update a maintenance ticket's status */
+export async function patchTicketStatus(id: string, status: TicketStatus): Promise<MaintenanceTicket> {
+  return safeFetch<MaintenanceTicket>(`/api/tickets/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
 /** Reset backend demo data when the database is active. */
 export async function resetBackendDemoData(): Promise<void> {
   await safeFetch<{ success: boolean }>('/api/reset', { method: 'POST' });
@@ -117,15 +183,4 @@ export async function registerCitizenAccount(input: {
     method: 'POST',
     body: JSON.stringify(input),
   });
-}
-
-export async function fetchDatabaseSnapshot(): Promise<{
-  file: string;
-  users: StoredUser[];
-  bins: Record<string, unknown>[];
-  reports: Record<string, unknown>[];
-  collections: Record<string, unknown>[];
-  tickets: Record<string, unknown>[];
-}> {
-  return safeFetch('/api/database');
 }

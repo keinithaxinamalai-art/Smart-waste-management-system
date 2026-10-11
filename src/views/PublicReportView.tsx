@@ -104,8 +104,13 @@ export function PublicReportView({
     setSubmittedId(report.id);
   };
 
-  const mine = userEmail
-    ? reports.filter((r) => r.reporterEmail?.toLowerCase() === userEmail.toLowerCase())
+  const signedInEmail = userEmail.toLowerCase();
+  const mine = signedInEmail
+    ? reports.filter(
+        (r) =>
+          r.accountEmail?.toLowerCase() === signedInEmail ||
+          r.reporterEmail?.toLowerCase() === signedInEmail
+      )
     : reports;
 
   const filteredHistory = mine.filter(

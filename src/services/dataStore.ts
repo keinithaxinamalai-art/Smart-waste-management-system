@@ -20,6 +20,25 @@ const TICKETS_STORAGE_KEY = 'swm_tickets_v1';
 
 const isStorageAvailable = typeof localStorage !== 'undefined';
 
+/** Reads a stored JSON array, keeping only object entries; returns null if missing or unusable. */
+function readStoredArray(key: string): Record<string, unknown>[] | null {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (item): item is Record<string, unknown> => typeof item === 'object' && item !== null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function asText(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
 export const CANBERRA_SUBURBS = [
   'Canberra City',
   'Civic',
@@ -307,16 +326,17 @@ export const INITIAL_TICKETS: MaintenanceTicket[] = [
 export function getStoredBins(): Bin[] {
   if (!isStorageAvailable) return INITIAL_BINS;
   try {
-    const raw = localStorage.getItem(BINS_STORAGE_KEY);
-    if (!raw) {
+    const parsed = readStoredArray(BINS_STORAGE_KEY);
+    if (!parsed || parsed.length === 0) {
       localStorage.setItem(BINS_STORAGE_KEY, JSON.stringify(INITIAL_BINS));
       return INITIAL_BINS;
     }
-    const parsed: Bin[] = JSON.parse(raw);
-    return parsed.map((b) => ({
-      ...b,
-      status: getBinStatus(b.fillLevel),
-    }));
+    return (parsed as unknown as Bin[])
+      .filter((b) => typeof b.id === 'string')
+      .map((b) => ({
+        ...b,
+        status: getBinStatus(b.fillLevel),
+      }));
   } catch {
     return INITIAL_BINS;
   }
@@ -331,16 +351,23 @@ export function saveStoredBins(bins: Bin[]): void {
 export function getStoredReports(): PublicReport[] {
   if (!isStorageAvailable) return INITIAL_REPORTS;
   try {
-    const raw = localStorage.getItem(REPORTS_STORAGE_KEY);
-    if (!raw) {
+    const parsed = readStoredArray(REPORTS_STORAGE_KEY);
+    if (!parsed) {
       localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(INITIAL_REPORTS));
       return INITIAL_REPORTS;
     }
-    const parsed: PublicReport[] = JSON.parse(raw);
-    return parsed.map((r) => ({
-      ...r,
-      status: normalizeReportStatus(r.status),
-    }));
+    return parsed
+      .filter((r) => typeof r.id === 'string' && r.id.trim() !== '')
+      .map((r) => ({
+        ...(r as unknown as PublicReport),
+        location: asText(r.location),
+        suburb: asText(r.suburb),
+        description: asText(r.description),
+        urgency: (asText(r.urgency) || 'Medium') as PublicReport['urgency'],
+        photoAttached: Boolean(r.photoAttached),
+        createdAt: asText(r.createdAt) || new Date().toISOString(),
+        status: normalizeReportStatus(asText(r.status)),
+      }));
   } catch {
     return INITIAL_REPORTS;
   }
@@ -355,15 +382,14 @@ export function saveStoredReports(reports: PublicReport[]): void {
 export function getStoredCollections(): CollectionRecord[] {
   if (!isStorageAvailable) return INITIAL_COLLECTIONS;
   try {
-    const raw = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
-    if (!raw) {
+    const parsed = readStoredArray(COLLECTIONS_STORAGE_KEY);
+    if (!parsed) {
       localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_COLLECTIONS));
       return INITIAL_COLLECTIONS;
     }
-    const parsed: CollectionRecord[] = JSON.parse(raw);
     return parsed.map((c) => ({
-      ...c,
-      status: normalizeCollectionStatus(c.status),
+      ...(c as unknown as CollectionRecord),
+      status: normalizeCollectionStatus(asText(c.status)),
     }));
   } catch {
     return INITIAL_COLLECTIONS;
@@ -379,15 +405,14 @@ export function saveStoredCollections(collections: CollectionRecord[]): void {
 export function getStoredTickets(): MaintenanceTicket[] {
   if (!isStorageAvailable) return INITIAL_TICKETS;
   try {
-    const raw = localStorage.getItem(TICKETS_STORAGE_KEY);
-    if (!raw) {
+    const parsed = readStoredArray(TICKETS_STORAGE_KEY);
+    if (!parsed) {
       localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(INITIAL_TICKETS));
       return INITIAL_TICKETS;
     }
-    const parsed: MaintenanceTicket[] = JSON.parse(raw);
     return parsed.map((t) => ({
-      ...t,
-      status: normalizeTicketStatus(t.status),
+      ...(t as unknown as MaintenanceTicket),
+      status: normalizeTicketStatus(asText(t.status)),
     }));
   } catch {
     return INITIAL_TICKETS;
