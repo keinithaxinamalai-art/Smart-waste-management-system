@@ -21,6 +21,8 @@ import { ReportsView } from './views/ReportsView';
 import './views/ReportsView.css';
 import { RoutesView } from './views/RoutesView';
 import './views/RoutesView.css';
+import { DatabaseView } from './views/DatabaseView';
+import './views/DatabaseView.css';
 import {
   clearExportParam,
   getExportMode,
@@ -49,6 +51,7 @@ function initialRoute(): { screen: AppScreen; nav: NavId } {
       maintenance: 'maintenance',
       reports: 'reports',
       'public-reports': 'public-reports',
+      database: 'database',
     };
     return { screen: 'app', nav: navMap[mode] ?? 'dashboard' };
   }
@@ -167,6 +170,8 @@ function AppRoutes() {
         return <ReportsView />;
       case 'public-reports':
         return <PublicReportsAdminView />;
+      case 'database':
+        return <DatabaseView />;
       default:
         return <DashboardView onNavigate={setNav} />;
     }

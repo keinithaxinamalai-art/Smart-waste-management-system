@@ -18,7 +18,7 @@ import {
   saveStoredReports,
   updateMaintenanceTicketStatus,
 } from '../services/dataStore';
-import { fetchBins, checkHealth, collectBin as apiBinCollect, assignCollectionRoute as apiAssignCollectionRoute, resetBackendDemoData } from '../services/api';
+import { fetchBins, checkHealth, collectBin as apiBinCollect, assignCollectionRoute as apiAssignCollectionRoute, resetBackendDemoData, registerCitizenAccount } from '../services/api';
 import type { Bin, CollectionPriority, CollectionRecord, MaintenanceTicket, PublicReport, ReportStatus, TicketStatus, UserRole } from '../types';
 import { generateReportId, normalizeReportStatus } from '../utils/binUtils';
 import { registerResident as createResidentAccount } from '../lib/residentAccounts';
@@ -154,18 +154,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const registerResident = useCallback(
-    (input: {
+    async (input: {
       name: string;
       email: string;
       password: string;
       confirmPassword: string;
       suburb: string;
     }) => {
-      const result = createResidentAccount(input);
-      if (result.ok && result.user) {
-        login(result.user.role, result.user.name, result.user.email, result.user.suburb);
+      const local = createResidentAccount(input);
+      if (!local.ok) {
+        return { ok: false, error: local.error };
       }
-      return { ok: result.ok, error: result.error };
+
+      try {
+        const saved = await registerCitizenAccount({
+          name: input.name.trim(),
+          email: input.email.trim().toLowerCase(),
+          password: input.password,
+          suburb: input.suburb.trim(),
+        });
+        login('citizen', saved.name, saved.email, saved.suburb);
+        return { ok: true };
+      } catch {
+        if (local.user) {
+          login(local.user.role, local.user.name, local.user.email, local.user.suburb);
+        }
+        return { ok: true };
+      }
     },
     [login]
   );

@@ -1,34 +1,73 @@
 /**
- * db.mjs — SQLite database setup for SmartWaste Server
- *
- * Creates and seeds the smartwaste.db database with tables mirroring
- * the existing frontend INITIAL_* data from src/services/dataStore.ts
+ * db.mjs — SQLite setup using Node's built-in node:sqlite (no native compile).
  */
 
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
-const DB_PATH = path.join(DATA_DIR, 'smartwaste.db');
+export const DB_PATH = path.join(DATA_DIR, 'smartwaste.db');
 
-// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-export const db = new Database(DB_PATH);
+export const db = new DatabaseSync(DB_PATH);
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
-// Enable WAL mode for better concurrent read performance
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+function dollar(obj = {}) {
+  const params = Object.create(null);
+  for (const [key, value] of Object.entries(obj)) {
+    params[`$${key}`] = value ?? null;
+  }
+  return params;
+}
 
-/**
- * Status calculation mirroring src/utils/binUtils.ts getBinStatus().
- * 0-49: Normal, 50-79: Moderate, 80-89: Collection Required, 90-100: Critical
- */
+function named(sql) {
+  const stmt = db.prepare(sql);
+  return {
+    run(objOrValue, ...rest) {
+      if (objOrValue !== null && typeof objOrValue === 'object' && !Array.isArray(objOrValue)) {
+        return stmt.run(dollar(objOrValue));
+      }
+      return stmt.run(objOrValue, ...rest);
+    },
+    get(objOrValue, ...rest) {
+      if (objOrValue !== null && typeof objOrValue === 'object' && !Array.isArray(objOrValue)) {
+        return stmt.get(dollar(objOrValue));
+      }
+      return stmt.get(objOrValue, ...rest);
+    },
+    all(objOrValue, ...rest) {
+      if (objOrValue !== undefined && objOrValue !== null && typeof objOrValue === 'object' && !Array.isArray(objOrValue)) {
+        return stmt.all(dollar(objOrValue));
+      }
+      if (objOrValue === undefined) return stmt.all();
+      return stmt.all(objOrValue, ...rest);
+    },
+  };
+}
+
+function withTx(fn) {
+  db.exec('BEGIN');
+  try {
+    fn();
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+function countOf(table) {
+  const row = db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get();
+  return Number(row?.c ?? 0);
+}
+
 export function getBinStatusServer(fillLevel) {
   const fl = Math.max(0, Math.min(100, Math.round(Number(fillLevel) || 0)));
   if (fl >= 90) return 'Critical';
@@ -37,10 +76,6 @@ export function getBinStatusServer(fillLevel) {
   return 'Normal';
 }
 
-/**
- * Priority calculation mirroring src/utils/binUtils.ts calculateCollectionPriority().
- * Score >= 80: Critical, >= 60: High, >= 40: Medium, < 40: Low
- */
 export function calcPriorityServer(fillLevel, hoursSinceCollected = 0) {
   const safeFill = Math.max(0, Math.min(100, Number(fillLevel) || 0));
   const safeHours = Math.max(0, Number(hoursSinceCollected) || 0);
@@ -59,10 +94,6 @@ export function hoursSinceCollected(lastCollected, now = Date.now()) {
   if (!Number.isFinite(timestamp)) return 0;
   return Math.max(0, (now - timestamp) / 3600000);
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Schema creation
-// ────────────────────────────────────────────────────────────────────────────
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bins (
@@ -123,12 +154,17 @@ db.exec(`
     updated_at  TEXT NOT NULL,
     notes       TEXT
   );
-`);
 
-// ────────────────────────────────────────────────────────────────────────────
-// Seed data (mirrors INITIAL_BINS from src/services/dataStore.ts)
-// Only seeds if tables are empty to preserve runtime changes across restarts
-// ────────────────────────────────────────────────────────────────────────────
+  CREATE TABLE IF NOT EXISTS users (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    email       TEXT NOT NULL UNIQUE,
+    password    TEXT NOT NULL,
+    role        TEXT NOT NULL,
+    suburb      TEXT,
+    created_at  TEXT NOT NULL
+  );
+`);
 
 const INITIAL_BINS = [
   { id: 'WDN-104', location: 'Weston Creek — Park St', suburb: 'Woden', fill_level: 92, waste_type: 'General', sensor_status: 'Online', last_collected: '2026-08-21T14:30:00Z', lat: -35.352, lng: 149.083 },
@@ -161,151 +197,144 @@ const INITIAL_TICKETS = [
   { id: 'MT-104', bin_id: 'KNG-019', location: 'Kingston — Foreshore Promenade', suburb: 'Kingston', fault_type: 'offline', status: 'Open', notes: 'No RF ping received for more than 2 hours.' },
 ];
 
-// Seed bins if empty
-const binCount = db.prepare('SELECT COUNT(*) as c FROM bins').get();
-if (binCount.c === 0) {
-  const insertBin = db.prepare(`
+const INITIAL_USERS = [
+  { id: 'user-admin-01', name: 'Operations Manager', email: 'admin@smartwaste.demo', password: 'DemoAdmin123!', role: 'admin', suburb: 'Civic' },
+  { id: 'user-staff-01', name: 'Collection Officer', email: 'staff@smartwaste.demo', password: 'DemoStaff123!', role: 'staff', suburb: 'Belconnen' },
+  { id: 'user-citizen-01', name: 'Canberra Resident', email: 'citizen@smartwaste.demo', password: 'DemoCitizen123!', role: 'citizen', suburb: 'Civic' },
+];
+
+function insertSeedBins() {
+  const insertBin = named(`
     INSERT INTO bins (id, location, suburb, fill_level, waste_type, status, sensor_status, last_collected, collection_priority, priority_score, lat, lng, updated_at)
-    VALUES (@id, @location, @suburb, @fill_level, @waste_type, @status, @sensor_status, @last_collected, @collection_priority, @priority_score, @lat, @lng, @updated_at)
+    VALUES ($id, $location, $suburb, $fill_level, $waste_type, $status, $sensor_status, $last_collected, $collection_priority, $priority_score, $lat, $lng, $updated_at)
   `);
-  const seedBins = db.transaction(() => {
-    for (const b of INITIAL_BINS) {
-      const { score, priority } = calcPriorityServer(b.fill_level, 48);
-      insertBin.run({
-        ...b,
-        status: getBinStatusServer(b.fill_level),
-        collection_priority: priority,
-        priority_score: score,
-        updated_at: new Date().toISOString(),
-      });
-    }
-  });
-  seedBins();
+  for (const b of INITIAL_BINS) {
+    const { score, priority } = calcPriorityServer(b.fill_level, 48);
+    insertBin.run({
+      ...b,
+      status: getBinStatusServer(b.fill_level),
+      collection_priority: priority,
+      priority_score: score,
+      updated_at: new Date().toISOString(),
+    });
+  }
+}
+
+function insertSeedReports() {
+  const insertReport = named(`
+    INSERT INTO public_reports (id, issue, issue_label, location, suburb, description, urgency, waste_type, bin_id, reporter_name, reporter_email, photo_attached, status, created_at, lat, lng)
+    VALUES ($id, $issue, $issue_label, $location, $suburb, $description, $urgency, $waste_type, $bin_id, $reporter_name, $reporter_email, $photo_attached, $status, $created_at, $lat, $lng)
+  `);
+  for (const r of INITIAL_REPORTS) {
+    insertReport.run({
+      ...r,
+      reporter_email: r.reporter_email || null,
+      bin_id: r.bin_id || null,
+      waste_type: r.waste_type || null,
+      issue_label: r.issue_label || null,
+      lat: r.lat || null,
+      lng: r.lng || null,
+      created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+    });
+  }
+}
+
+function insertSeedCollections() {
+  const insertCol = named(`
+    INSERT INTO collections (id, bin_id, suburb, location, scheduled_date, status, priority, assigned_to)
+    VALUES ($id, $bin_id, $suburb, $location, $scheduled_date, $status, $priority, $assigned_to)
+  `);
+  for (const c of INITIAL_COLLECTIONS) insertCol.run(c);
+}
+
+function insertSeedTickets() {
+  const insertTicket = named(`
+    INSERT INTO maintenance_tickets (id, bin_id, location, suburb, fault_type, status, created_at, updated_at, notes)
+    VALUES ($id, $bin_id, $location, $suburb, $fault_type, $status, $created_at, $updated_at, $notes)
+  `);
+  const now = new Date().toISOString();
+  for (const t of INITIAL_TICKETS) {
+    insertTicket.run({ ...t, created_at: now, updated_at: now, notes: t.notes || null });
+  }
+}
+
+function insertSeedUsers() {
+  const insertUser = named(`
+    INSERT INTO users (id, name, email, password, role, suburb, created_at)
+    VALUES ($id, $name, $email, $password, $role, $suburb, $created_at)
+  `);
+  const now = new Date().toISOString();
+  for (const user of INITIAL_USERS) insertUser.run({ ...user, created_at: now });
+}
+
+if (countOf('bins') === 0) {
+  withTx(insertSeedBins);
   console.log('[db] Seeded bins table with demo data');
 }
-
-const reportCount = db.prepare('SELECT COUNT(*) as c FROM public_reports').get();
-if (reportCount.c === 0) {
-  const insertReport = db.prepare(`
-    INSERT INTO public_reports (id, issue, issue_label, location, suburb, description, urgency, waste_type, bin_id, reporter_name, reporter_email, photo_attached, status, created_at, lat, lng)
-    VALUES (@id, @issue, @issue_label, @location, @suburb, @description, @urgency, @waste_type, @bin_id, @reporter_name, @reporter_email, @photo_attached, @status, @created_at, @lat, @lng)
-  `);
-  const seedReports = db.transaction(() => {
-    for (const r of INITIAL_REPORTS) {
-      insertReport.run({
-        ...r,
-        reporter_email: r.reporter_email || null,
-        bin_id: r.bin_id || null,
-        waste_type: r.waste_type || null,
-        issue_label: r.issue_label || null,
-        lat: r.lat || null,
-        lng: r.lng || null,
-        created_at: new Date(Date.now() - Math.random() * 3600000 * 12).toISOString(),
-      });
-    }
-  });
-  seedReports();
+if (countOf('public_reports') === 0) {
+  withTx(insertSeedReports);
   console.log('[db] Seeded public_reports table with demo data');
 }
-
-const colCount = db.prepare('SELECT COUNT(*) as c FROM collections').get();
-if (colCount.c === 0) {
-  const insertCol = db.prepare(`
-    INSERT INTO collections (id, bin_id, suburb, location, scheduled_date, status, priority, assigned_to)
-    VALUES (@id, @bin_id, @suburb, @location, @scheduled_date, @status, @priority, @assigned_to)
-  `);
-  const seedCols = db.transaction(() => {
-    for (const c of INITIAL_COLLECTIONS) {
-      insertCol.run(c);
-    }
-  });
-  seedCols();
+if (countOf('collections') === 0) {
+  withTx(insertSeedCollections);
   console.log('[db] Seeded collections table with demo data');
 }
-
-const ticketCount = db.prepare('SELECT COUNT(*) as c FROM maintenance_tickets').get();
-if (ticketCount.c === 0) {
-  const insertTicket = db.prepare(`
-    INSERT INTO maintenance_tickets (id, bin_id, location, suburb, fault_type, status, created_at, updated_at, notes)
-    VALUES (@id, @bin_id, @location, @suburb, @fault_type, @status, @created_at, @updated_at, @notes)
-  `);
-  const seedTickets = db.transaction(() => {
-    for (const t of INITIAL_TICKETS) {
-      const now = new Date().toISOString();
-      insertTicket.run({ ...t, created_at: now, updated_at: now, notes: t.notes || null });
-    }
-  });
-  seedTickets();
+if (countOf('maintenance_tickets') === 0) {
+  withTx(insertSeedTickets);
   console.log('[db] Seeded maintenance_tickets table with demo data');
+}
+if (countOf('users') === 0) {
+  withTx(insertSeedUsers);
+  console.log('[db] Seeded users table with demo accounts');
 }
 
 export function resetDemoData() {
-  const reset = db.transaction(() => {
-    db.prepare('DELETE FROM public_reports').run();
-    db.prepare('DELETE FROM collections').run();
-    db.prepare('DELETE FROM maintenance_tickets').run();
-    db.prepare('DELETE FROM bins').run();
-
-    const now = new Date().toISOString();
-    const insertBin = db.prepare(`
-      INSERT INTO bins (id, location, suburb, fill_level, waste_type, status, sensor_status, last_collected, collection_priority, priority_score, lat, lng, updated_at)
-      VALUES (@id, @location, @suburb, @fill_level, @waste_type, @status, @sensor_status, @last_collected, @collection_priority, @priority_score, @lat, @lng, @updated_at)
-    `);
-    for (const bin of INITIAL_BINS) {
-      const { score, priority } = calcPriorityServer(bin.fill_level, 48);
-      insertBin.run({ ...bin, status: getBinStatusServer(bin.fill_level), collection_priority: priority, priority_score: score, updated_at: now });
-    }
-
-    const insertReport = db.prepare(`
-      INSERT INTO public_reports (id, issue, issue_label, location, suburb, description, urgency, waste_type, bin_id, reporter_name, reporter_email, photo_attached, status, created_at, lat, lng)
-      VALUES (@id, @issue, @issue_label, @location, @suburb, @description, @urgency, @waste_type, @bin_id, @reporter_name, @reporter_email, @photo_attached, @status, @created_at, @lat, @lng)
-    `);
-    for (const report of INITIAL_REPORTS) {
-      insertReport.run({ ...report, reporter_email: report.reporter_email || null, bin_id: report.bin_id || null, waste_type: report.waste_type || null, issue_label: report.issue_label || null, created_at: now, lat: report.lat || null, lng: report.lng || null });
-    }
-
-    const insertCollection = db.prepare(`
-      INSERT INTO collections (id, bin_id, suburb, location, scheduled_date, status, priority, assigned_to)
-      VALUES (@id, @bin_id, @suburb, @location, @scheduled_date, @status, @priority, @assigned_to)
-    `);
-    for (const collection of INITIAL_COLLECTIONS) insertCollection.run(collection);
-
-    const insertTicket = db.prepare(`
-      INSERT INTO maintenance_tickets (id, bin_id, location, suburb, fault_type, status, created_at, updated_at, notes)
-      VALUES (@id, @bin_id, @location, @suburb, @fault_type, @status, @created_at, @updated_at, @notes)
-    `);
-    for (const ticket of INITIAL_TICKETS) insertTicket.run({ ...ticket, created_at: now, updated_at: now, notes: ticket.notes || null });
+  withTx(() => {
+    db.exec('DELETE FROM public_reports');
+    db.exec('DELETE FROM collections');
+    db.exec('DELETE FROM maintenance_tickets');
+    db.exec('DELETE FROM bins');
+    db.exec('DELETE FROM users');
+    insertSeedBins();
+    insertSeedReports();
+    insertSeedCollections();
+    insertSeedTickets();
+    insertSeedUsers();
   });
-  reset();
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Prepared statement helpers used by the API
-// ────────────────────────────────────────────────────────────────────────────
-
 export const stmts = {
-  getAllBins: db.prepare('SELECT * FROM bins ORDER BY priority_score DESC'),
-  getBinById: db.prepare('SELECT * FROM bins WHERE id = ?'),
-  updateBinTelemetry: db.prepare(`
-    UPDATE bins SET fill_level=@fill_level, status=@status, sensor_status=@sensor_status,
-    collection_priority=@collection_priority, priority_score=@priority_score, updated_at=@updated_at
-    WHERE id=@id
+  getAllBins: named('SELECT * FROM bins ORDER BY priority_score DESC'),
+  getBinById: named('SELECT * FROM bins WHERE id = ?'),
+  updateBinTelemetry: named(`
+    UPDATE bins SET fill_level=$fill_level, status=$status, sensor_status=$sensor_status,
+    collection_priority=$collection_priority, priority_score=$priority_score, updated_at=$updated_at
+    WHERE id=$id
   `),
-  collectBin: db.prepare(`
+  collectBin: named(`
     UPDATE bins SET fill_level=5, status='Normal', collection_priority='Low', priority_score=3,
-    last_collected=@now, updated_at=@now WHERE id=@id
+    last_collected=$now, updated_at=$now WHERE id=$id
   `),
-  getAllCollections: db.prepare('SELECT * FROM collections ORDER BY scheduled_date ASC'),
-  getCollectionsByBin: db.prepare('SELECT * FROM collections WHERE bin_id = ?'),
-  markCollectionsComplete: db.prepare(`
-    UPDATE collections SET status='Completed', completed_at=@now WHERE bin_id=@bin_id AND status != 'Completed'
+  getAllCollections: named('SELECT * FROM collections ORDER BY scheduled_date ASC'),
+  getCollectionsByBin: named('SELECT * FROM collections WHERE bin_id = ?'),
+  markCollectionsComplete: named(`
+    UPDATE collections SET status='Completed', completed_at=$now WHERE bin_id=$bin_id AND status != 'Completed'
   `),
-  resolveReportsForBin: db.prepare(`
-    UPDATE public_reports SET status='Resolved' WHERE bin_id=@bin_id AND status != 'Resolved'
+  resolveReportsForBin: named(`
+    UPDATE public_reports SET status='Resolved' WHERE bin_id=$bin_id AND status != 'Resolved'
   `),
-  assignRoutePending: db.prepare(`
-    UPDATE collections SET status='Scheduled', assigned_to=@driver WHERE status='Pending'
+  assignRoutePending: named(`
+    UPDATE collections SET status='Scheduled', assigned_to=$driver WHERE status='Pending'
   `),
+  getAllUsers: named('SELECT * FROM users ORDER BY role, name'),
+  getUserByEmail: named('SELECT * FROM users WHERE lower(email) = lower(?)'),
+  insertUser: named(`
+    INSERT INTO users (id, name, email, password, role, suburb, created_at)
+    VALUES ($id, $name, $email, $password, $role, $suburb, $created_at)
+  `),
+  deleteUserByEmail: named('DELETE FROM users WHERE lower(email) = lower(?)'),
+  getAllReports: named('SELECT * FROM public_reports ORDER BY created_at DESC'),
+  getAllTickets: named('SELECT * FROM maintenance_tickets ORDER BY created_at DESC'),
 };
 
 console.log(`[db] SQLite database ready at ${DB_PATH}`);

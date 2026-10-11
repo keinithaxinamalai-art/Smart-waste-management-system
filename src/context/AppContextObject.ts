@@ -12,7 +12,7 @@ export interface AppContextValue {
     password: string;
     confirmPassword: string;
     suburb: string;
-  }) => { ok: boolean; error?: string };
+  }) => Promise<{ ok: boolean; error?: string }>;
   bins: Bin[];
   reports: PublicReport[];
   collections: CollectionRecord[];

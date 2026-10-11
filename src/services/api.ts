@@ -23,7 +23,13 @@ async function safeFetch<T>(input: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`API ${res.status}: ${text}`);
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      throw new Error(parsed.error || text);
+    } catch (err) {
+      if (err instanceof SyntaxError) throw new Error(text || `API ${res.status}`);
+      throw err;
+    }
   }
   return res.json() as Promise<T>;
 }
@@ -79,4 +85,47 @@ export async function assignCollectionRoute(driver?: string): Promise<{ success:
 /** Reset backend demo data when the database is active. */
 export async function resetBackendDemoData(): Promise<void> {
   await safeFetch<{ success: boolean }>('/api/reset', { method: 'POST' });
+}
+
+export interface StoredUser {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: 'admin' | 'staff' | 'citizen';
+  suburb?: string;
+  createdAt?: string;
+}
+
+export async function loginAgainstDatabase(
+  email: string,
+  password: string
+): Promise<StoredUser> {
+  return safeFetch<StoredUser>('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function registerCitizenAccount(input: {
+  name: string;
+  email: string;
+  password: string;
+  suburb?: string;
+}): Promise<StoredUser> {
+  return safeFetch<StoredUser>('/api/register', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function fetchDatabaseSnapshot(): Promise<{
+  file: string;
+  users: StoredUser[];
+  bins: Record<string, unknown>[];
+  reports: Record<string, unknown>[];
+  collections: Record<string, unknown>[];
+  tickets: Record<string, unknown>[];
+}> {
+  return safeFetch('/api/database');
 }

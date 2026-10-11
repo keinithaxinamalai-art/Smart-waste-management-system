@@ -1,0 +1,20 @@
+.db-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+}
+
+.db-note svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--green-800);
+}
+
+.db-note + .card,
+.card + .card {
+  margin-top: 1.25rem;
+}

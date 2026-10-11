@@ -12,13 +12,15 @@
  *   POST  /api/bins/:id/collect
  *   GET  /api/collections
  *   POST /api/routes/assign
+ *   GET  /api/users
+ *   POST /api/login
+ *   POST /api/register
+ *   GET  /api/database
  */
 
 import express from 'express';
 import cors from 'cors';
-import mqtt from 'mqtt';
-import { db, stmts, getBinStatusServer, calcPriorityServer, hoursSinceCollected, resetDemoData } from './db.mjs';
-import { createMqttBroker } from './mqtt.mjs';
+import { db, stmts, getBinStatusServer, calcPriorityServer, hoursSinceCollected, resetDemoData, DB_PATH } from './db.mjs';
 
 const PORT = process.env.PORT || 3001;
 const MQTT_URL = 'mqtt://localhost:1883';
@@ -36,7 +38,95 @@ app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
   const binCount = db.prepare('SELECT COUNT(*) as c FROM bins').get();
-  res.json({ status: 'ok', bins: binCount.c, timestamp: new Date().toISOString() });
+  const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get();
+  res.json({
+    status: 'ok',
+    bins: Number(binCount?.c ?? 0),
+    users: Number(userCount?.c ?? 0),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+function rowToUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    password: row.password,
+    role: row.role,
+    suburb: row.suburb,
+    createdAt: row.created_at,
+  };
+}
+
+app.get('/api/users', (_req, res) => {
+  res.json(stmts.getAllUsers.all().map(rowToUser));
+});
+
+app.post('/api/login', (req, res) => {
+  const email = String(req.body?.email || '').trim();
+  const password = String(req.body?.password || '');
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+  const row = stmts.getUserByEmail.get(email);
+  if (!row || row.password !== password) {
+    return res.status(401).json({ error: 'Email or password is incorrect.' });
+  }
+  res.json({
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    suburb: row.suburb,
+  });
+});
+
+app.post('/api/register', (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+  const suburb = String(req.body?.suburb || '').trim();
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Name, email and password are required.' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+  if (stmts.getUserByEmail.get(email)) {
+    return res.status(409).json({ error: 'An account with this email already exists.' });
+  }
+
+  const user = {
+    id: `user-citizen-${Date.now().toString(36)}`,
+    name,
+    email,
+    password,
+    role: 'citizen',
+    suburb: suburb || 'Canberra City',
+    created_at: new Date().toISOString(),
+  };
+  stmts.insertUser.run(user);
+  res.status(201).json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    suburb: user.suburb,
+  });
+});
+
+app.get('/api/database', (_req, res) => {
+  res.json({
+    file: DB_PATH,
+    users: stmts.getAllUsers.all().map(rowToUser),
+    bins: stmts.getAllBins.all(),
+    reports: stmts.getAllReports.all(),
+    collections: stmts.getAllCollections.all(),
+    tickets: stmts.getAllTickets.all(),
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -156,7 +246,7 @@ app.post('/api/routes/assign', (req, res) => {
 // MQTT Telemetry Subscriber
 // ────────────────────────────────────────────────────────────────────────────
 
-function startMqttSubscriber() {
+function startMqttSubscriber(mqtt) {
   const client = mqttClient = mqtt.connect(MQTT_URL, {
     clientId: `smartwaste-server-${Date.now()}`,
     reconnectPeriod: 3000,
@@ -239,20 +329,21 @@ function startMqttSubscriber() {
 // ────────────────────────────────────────────────────────────────────────────
 
 async function main() {
-  // Start the embedded MQTT broker first
-  await createMqttBroker();
+  try {
+    const mqttMod = await import('mqtt');
+    const brokerMod = await import('./mqtt.mjs');
+    await brokerMod.createMqttBroker();
+    await new Promise((r) => setTimeout(r, 500));
+    startMqttSubscriber(mqttMod.default);
+  } catch (err) {
+    console.warn('[server] MQTT optional — API still running:', err.message);
+  }
 
-  // Give broker a moment to be ready before connecting
-  await new Promise((r) => setTimeout(r, 500));
-
-  // Connect MQTT subscriber
-  startMqttSubscriber();
-
-  // Start Express
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[server] SmartWaste API listening on http://localhost:${PORT}`);
     console.log(`[server] Health: http://localhost:${PORT}/api/health`);
-    console.log(`[server] Bins:   http://localhost:${PORT}/api/bins`);
+    console.log(`[server] Users:  http://localhost:${PORT}/api/users`);
+    console.log(`[server] SQLite: ${DB_PATH}`);
   });
 }
 

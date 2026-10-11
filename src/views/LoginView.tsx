@@ -3,6 +3,7 @@ import { AlertCircle, LogIn, Recycle, Shield, Truck, User } from 'lucide-react';
 import { BinGlyph, CitySkyline, RecycleMark } from '../components/Visuals';
 import { useApp } from '../hooks/useApp';
 import { authenticate, MIN_PASSWORD_LENGTH, PORTAL_ACCOUNTS } from '../lib/residentAccounts';
+import { loginAgainstDatabase } from '../services/api';
 import { CANBERRA_SUBURBS } from '../services/dataStore';
 import './LoginView.css';
 
@@ -44,9 +45,19 @@ export function LoginView({
     setErrorMessage(null);
   };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    try {
+      const dbUser = await loginAgainstDatabase(email.trim().toLowerCase(), password);
+      if (dbUser.role === 'admin' || dbUser.role === 'staff' || dbUser.role === 'citizen') {
+        login(dbUser.role, dbUser.name, dbUser.email, dbUser.suburb);
+        routeAfterLogin(dbUser.role);
+        return;
+      }
+    } catch {
+      // GitHub Pages has no SQLite — use the local portal accounts.
+    }
     const result = authenticate(email, password);
     if (!result.ok || !result.user) {
       setErrorMessage(result.error ?? 'Check your email and password, then try again.');
@@ -56,10 +67,10 @@ export function LoginView({
     routeAfterLogin(result.user.role);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    const result = registerResident({ name, email, password, confirmPassword, suburb });
+    const result = await registerResident({ name, email, password, confirmPassword, suburb });
     if (!result.ok) {
       setErrorMessage(result.error ?? 'Unable to create this account.');
       return;
